@@ -14,16 +14,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path
 
 from .open_id import PublicJWKsView
 from . import views
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("send_mock_updates/", views.get_mock_request_list),
     path("authenticate/", views.sample_authentication),
     path("test/", views.test_route),
-    path("retrieve_asset_config/", views.retrieve_asset_config),
     path(".well-known/openid-configuration/", PublicJWKsView.as_view()),
+    path("update_observations/", views.update_observations),
 ]

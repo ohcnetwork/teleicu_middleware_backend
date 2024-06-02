@@ -9,14 +9,16 @@ class AssetClasses(enum.Enum):
     HL7MONITOR = "HL7MonitorAsset"
     VENTILATOR = "VentilatorAsset"
 
+
 ASSET_CLASSES_CHOICES = [(e.value, e.name) for e in AssetClasses]
+
 
 class Asset(models.Model):
     class AssetType(models.TextChoices):
         HL7MONITOR = "HL7MONITOR", "HL7 Monitor"
         # Add other asset types as needed
 
-    external_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     type = models.CharField(
         max_length=20,
@@ -35,7 +37,7 @@ class Asset(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["external_id", "ip_address"]),
+            models.Index(fields=["id", "ip_address"]),
         ]
 
 

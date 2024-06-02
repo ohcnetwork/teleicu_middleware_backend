@@ -16,5 +16,4 @@ class PublicJWKsView(GenericAPIView):
 
     @method_decorator(cache_page(60 * 60 * 24))
     def get(self, *args, **kwargs):
-        print("i am called")
         return Response(settings.JWKS.as_dict())
