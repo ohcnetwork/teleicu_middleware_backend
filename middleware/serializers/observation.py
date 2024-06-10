@@ -157,3 +157,74 @@ class ObservationSerializer(serializers.Serializer):
             print(ret.get("data_high_limit"))
             ret["data-high-limit"] = ret.pop("data_high_limit")
         return ret
+
+    def create_object(self, validated_data):
+        # Here, 'Observation' is presumed to be your custom class
+        return Observation(**validated_data)
+
+
+class BloodPressureDailyRoundSerializer(serializers.Serializer):
+    systolic = serializers.IntegerField(required=False, allow_null=True)
+    diastolic = serializers.IntegerField(required=False, allow_null=True)
+    mean = serializers.IntegerField(required=False, allow_null=True)
+
+
+class DailyRoundObservationSerializer(serializers.Serializer):
+    spo2 = serializers.FloatField(required=False, allow_null=True)
+    ventilator_spo2 = serializers.FloatField(required=False, allow_null=True)
+    resp = serializers.FloatField(required=False, allow_null=True)
+    pulse = serializers.FloatField(required=False, allow_null=True)
+    temperature = serializers.FloatField(required=False, allow_null=True)
+    temperature_measured_at = serializers.DateTimeField(required=False, allow_null=True)
+    bp = BloodPressureDailyRoundSerializer(required=False, allow_null=True)
+    taken_at = serializers.DateTimeField(required=False, allow_null=True)
+    rounds_type = serializers.ChoiceField(choices=["AUTOMATED"], required=False)
+    is_parsed_by_ocr = serializers.BooleanField(required=False)
+
+
+class Observation:
+    def __init__(
+        self,
+        observation_id,
+        device_id,
+        date_time,
+        patient_id,
+        patient_name=None,
+        status=None,
+        value=None,
+        unit=None,
+        interpretation=None,
+        low_limit=None,
+        high_limit=None,
+        systolic=None,
+        diastolic=None,
+        map=None,
+        wave_name=None,
+        resolution=None,
+        sampling_rate=None,
+        data_baseline=None,
+        data_low_limit=None,
+        data_high_limit=None,
+        data=None,
+    ):
+        self.observation_id = observation_id
+        self.device_id = device_id
+        self.date_time = date_time
+        self.patient_id = patient_id
+        self.patient_name = patient_name
+        self.status = status
+        self.value = value
+        self.unit = unit
+        self.interpretation = interpretation
+        self.low_limit = low_limit
+        self.high_limit = high_limit
+        self.systolic = systolic
+        self.diastolic = diastolic
+        self.map = map
+        self.wave_name = wave_name
+        self.resolution = resolution
+        self.sampling_rate = sampling_rate
+        self.data_baseline = data_baseline
+        self.data_low_limit = data_low_limit
+        self.data_high_limit = data_high_limit
+        self.data = data

@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from typing import Dict, List, Optional
 from uuid import UUID
@@ -10,22 +11,27 @@ from asgiref.sync import async_to_sync
 from django.conf import settings
 
 
-from .utils import _get_headers, group_by
+from .utils.utils import group_by
 
-from .types.observations import ObservationsMap
+from .types.observations import DeviceID, LogData, ObservationsMap, StaticObservation
 
 
-from .serializers.observation import ObservationIDChoices, ObservationSerializer
-from rest_framework.parsers import JSONParser
+from .serializers.observation import (
+    ObservationIDChoices,
+    ObservationSerializer,
+    StatusChoices,
+)
+
 from .authentication import MiddlewareAuthentication
 
-
-from .token_generator import generate_jwt
+active_devices: List[str] = []
 
 last_observation_data: Dict[
-    ObservationIDChoices, Dict[str, Optional[ObservationSerializer]]
+    ObservationIDChoices, Dict[DeviceID, Optional[ObservationSerializer]]
 ] = {}
 latest_observation = ObservationsMap()
+log_data: List[LogData] = []
+static_observations: List[StaticObservation] = []
 
 
 @api_view(["POST"])
@@ -50,19 +56,13 @@ def test_route(request):
 
 @api_view(["POST"])
 def update_observations(request):
+    add_log_data(request.data)
     data = flatten_observations(request.data)
     serializer = ObservationSerializer(data=data, many=True)
-
-    # channel_layer = get_channel_layer()
 
     # TODO
     # addLogData
     # addStatusData
-
-    # async_to_sync(channel_layer.group_send)(
-    #     "send_mock_req", {"type": "send_mock_req", "message": request.data}
-    # )
-    # print(data[0])
 
     if serializer.is_valid():
         flattened_validated_observations = serializer.data
@@ -78,6 +78,7 @@ def update_observations(request):
             )
             if last_blood_pressure_data and last_blood_pressure_data.get(device_id):
                 observation.append(last_blood_pressure_data.get(device_id))
+            print("sending data", device_id)
             async_to_sync(channel_layer.group_send)(
                 f"ip_{device_id}",
                 {
@@ -85,6 +86,9 @@ def update_observations(request):
                     "message": observation,
                 },
             )
+        for flattened_validated_observation in flattened_validated_observations:
+            add_observation(flattened_validated_observation)
+
         return Response({"result": "Successful"}, status=status.HTTP_200_OK)
     else:
         print(serializer.errors)
@@ -115,7 +119,7 @@ def update_observation_data(
             and not (observation.get("value") or observation.get("observation.data"))
             and observation.get("status") != "final"
         ):
-            continue
+            return
 
         if observation_id not in last_observation_data:
             last_observation_data[observation_id] = {}
@@ -123,3 +127,43 @@ def update_observation_data(
         last_observation_data[observation_id][
             observation.get("device_id")
         ] = observation
+
+
+def add_observation(observation: ObservationSerializer):
+    if observation.get("device_id") in active_devices:
+        for idx, item in enumerate(static_observations):
+            if item.device_id == observation.get("device_id"):
+                sliced_observations = item.observations.get(
+                    observation.get("observation_id"), []
+                )[-settings.DEFAULT_LISTING_LIMIT :]
+                static_observations[idx] = StaticObservation(
+                    device_id=item.device_id,
+                    observations={
+                        **item.observations,
+                        observation.get("observation_id"): sliced_observations
+                        + [observation],
+                    },
+                    last_updated=datetime.now(),
+                )
+
+    else:
+        active_devices.append(observation.get("device_id"))
+        static_observations.append(
+            StaticObservation(
+                device_id=observation.get("device_id"),
+                observations={observation.get("observation_id"): [observation]},
+                last_updated=datetime.now(),
+            )
+        )
+
+
+def add_log_data(new_data: List[List[ObservationSerializer]]):
+    # Slice the log_data to the last DEFAULT_LISTING_LIMIT entries
+    global log_data
+    if len(log_data) > settings.DEFAULT_LISTING_LIMIT:
+        log_data = log_data[-settings.DEFAULT_LISTING_LIMIT :]
+    # Create a new LogData entry
+    new_log_entry = LogData(date_time=datetime.now(), data=new_data)
+
+    # Append the new entry to the log_data
+    log_data.append(new_log_entry)

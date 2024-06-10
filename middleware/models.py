@@ -9,20 +9,19 @@ class AssetClasses(enum.Enum):
     HL7MONITOR = "HL7MonitorAsset"
     VENTILATOR = "VentilatorAsset"
 
-
-ASSET_CLASSES_CHOICES = [(e.value, e.name) for e in AssetClasses]
+    @classmethod
+    def as_choices(cls):
+        """Return choices for use in a Django model field."""
+        return [(x.name, x.value) for x in cls]
 
 
 class Asset(models.Model):
-    class AssetType(models.TextChoices):
-        HL7MONITOR = "HL7MONITOR", "HL7 Monitor"
-        # Add other asset types as needed
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     type = models.CharField(
         max_length=20,
-        choices=ASSET_CLASSES_CHOICES,
+        choices=AssetClasses.as_choices(),
         default=AssetClasses.HL7MONITOR.value,
     )
     description = models.TextField()

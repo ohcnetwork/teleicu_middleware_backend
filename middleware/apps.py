@@ -9,3 +9,4 @@ class MiddlewareConfig(AppConfig):
         from middleware.tasks import retrieve_asset_config
 
         # retrieve_asset_config()
+        print("startup function called")
