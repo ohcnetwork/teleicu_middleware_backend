@@ -163,13 +163,17 @@ JWKS = JsonWebKey.import_key_set(
 )
 
 
+REDIS_OBSERVATIONS_KEY = env("REDIS_OBSERVATIONS_KEY")
+
+
 FACILITYID = "81092ced-8720-44cb-b4c5-3f0ad0540153"
-HOST_NAME = "receptors-maintained-zoning-floyd.trycloudflare.com"
-CSRF_TRUSTED_ORIGINS = ["https://receptors-maintained-zoning-floyd.trycloudflare.com"]
+HOST_NAME = "appliances-trek-termination-hotel.trycloudflare.com"
+CSRF_TRUSTED_ORIGINS = ["https://appliances-trek-termination-hotel.trycloudflare.com"]
 UPDATE_INTERVAL = 60 * 60 * 1000
 DEFAULT_LISTING_LIMIT = 10
-CELERY_BROKER_URL = "redis://127.0.0.1:6379"
-# CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_BROKER_URL = (
+    "redis://127.0.0.1:6379"  # CELERY_ACCEPT_CONTENT = ["application/json"]
+)
 # CELERY_RESULT_SERIALIZER = "json"
 # CELERY_TASK_SERIALIZER = "json"
 # CELERY_RESULT_BACKEND = "django-db"
@@ -180,3 +184,14 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 
 # CELERY_BROKER_URL = config("CELERY_BROKER_REDIS_URL", default="redis://localhost:6379")
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",  # Redis server location
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}

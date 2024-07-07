@@ -6,7 +6,9 @@ from django.conf import settings
 import logging
 
 from middleware.models import Asset, AssetClasses
-from middleware.serializers.observation import DailyRoundObservationSerializer
+from middleware.serializers.observation import (
+    DailyRoundObservation,
+)
 from middleware.utils.observation_utils import get_vitals_from_observations
 from middleware.utils.utils import _get_headers, get_patient_id
 
@@ -65,7 +67,7 @@ def automated_daily_rounds():
             logger.error("Patient not found for the asset having id: %s", monitor.id)
             return
 
-        vitals: Optional[DailyRoundObservationSerializer] = (
-            get_vitals_from_observations(ip_address=monitor.ip_address)
+        vitals: Optional[DailyRoundObservation] = get_vitals_from_observations(
+            ip_address=monitor.ip_address
         )
         print("vitals", vitals)

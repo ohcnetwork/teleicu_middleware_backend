@@ -16,10 +16,10 @@ app.conf.beat_schedule = {
     #     "task": "middleware.tasks.test_celery_task",
     #     "schedule": 10.0,
     # },
-    # "run-retrieve-asset-config": {
-    #     "task": "middleware.tasks.retrieve_asset_config",
-    #     "schedule": 5.0,
-    # },
+    "run-retrieve-asset-config": {
+        "task": "middleware.tasks.retrieve_asset_config",
+        "schedule": 10.0,
+    },
     "run-automated-daily-round": {
         "task": "middleware.tasks.automated_daily_rounds",
         "schedule": 5.0,

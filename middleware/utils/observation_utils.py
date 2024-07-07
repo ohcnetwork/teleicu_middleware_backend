@@ -1,13 +1,16 @@
 from datetime import datetime
 from typing import Dict, List, Union
 from middleware.serializers.observation import (
-    DailyRoundObservationSerializer,
-    ObservationIDChoices,
-    ObservationSerializer,
+    DailyRoundObservation,
+    Observation,
+    ObservationID,
+    ObservationList,
+    Status,
 )
+import pytz
+from django.core.cache import cache
 from django.conf import settings
-from middleware.types.observations import LogData, StaticObservation
-from middleware.views import static_observations
+from middleware.types.observations import DeviceID, StaticObservation
 
 
 messages = [
@@ -201,21 +204,21 @@ messages = [
 ]
 
 
-def is_valid(observation: ObservationSerializer):
+def is_valid(observation: Observation):
     if (
         not observation
-        or not observation.get("status")
+        or not observation.status
         or (
-            observation.get("observation_id") != ObservationIDChoices.BLOOD_PRESSURE
-            and not isinstance(observation.get("value"), (int, float))
+            observation.observation_id != ObservationID.BLOOD_PRESSURE
+            and not isinstance(observation.value, (int, float))
         )
     ):
         return False
 
-    if observation["status"] == "final":
+    if observation.status == Status.FINAL:
         return True
 
-    message = observation["status"].replace("Message-", "")
+    message = observation.status.replace("Message-", "")
     message_obj = next((m for m in messages if m["message"] == message), None)
 
     if message_obj and message_obj.get("invalid"):
@@ -225,71 +228,13 @@ def is_valid(observation: ObservationSerializer):
 
 
 def get_vitals_from_observations(ip_address: str):
-    global static_observations
-    print("static is", static_observations)
-
-    def get_value_from_data(
-        type: ObservationIDChoices,
-        data: Dict[
-            ObservationIDChoices,
-            Union[ObservationSerializer, List[ObservationSerializer]],
-        ],
-    ):
-        if not data or type not in data:
-            return None
-
-        observation = data[type][0] if isinstance(data[type], list) else data[type]
-
-        if "date-time" not in observation:
-            return None
-
-        observation_time = datetime.fromisoformat(
-            observation["date-time"].replace(" ", "T") + "+05:30"
-        )
-
-        is_stale = (datetime.now() - observation_time) > settings.UPDATE_INTERVAL
-
-        if is_stale or not is_valid(observation):
-            return None
-
-        if type in [
-            ObservationIDChoices.BODY_TEMPERATURE1,
-            ObservationIDChoices.BODY_TEMPERATURE2,
-        ]:
-            if (
-                observation.get("low-limit", None)
-                < observation.get("value", None)
-                < observation.get("high-limit", None)
-            ):
-                return {
-                    "temperature": observation["value"],
-                    "temperature_measured_at": observation_time.isoformat(),
-                }
-            return None
-        elif type == "blood-pressure":
-            return {
-                "systolic": observation.get("systolic", {}).get("value"),
-                "diastolic": observation.get("diastolic", {}).get("value"),
-            }
-        else:
-            return observation.get("value", None)
 
     print("Getting vitals from observations for the asset: %s", ip_address)
 
-    observation: StaticObservation = None
-    print("static_observations", static_observations)
-    print("Static is ", static_observations)
-    for static_observation in static_observations:
-        if static_observation.device_id == ip_address:
-            observation = static_observation
-            break
-    print("observation are", observation)
+    observation: StaticObservation = get_static_observations(device_id=ip_address)
     if (
         not observation
-        or (
-            datetime.now() - datetime.fromisoformat(observation.last_updated)
-        ).total_seconds()
-        * 1000
+        or (datetime.now() - observation.last_updated).total_seconds() * 1000
         > settings.UPDATE_INTERVAL
     ):
         return None
@@ -300,20 +245,114 @@ def get_vitals_from_observations(ip_address: str):
     ) or get_value_from_data("body-temperature2", data)
     if temperature_data is None:
         temperature_data = {"temperature": None, "temperature_measured_at": None}
-    response = {
-        "taken_at": observation.last_updated,
-        "spo2": get_value_from_data("SpO2", data),
-        "ventilator_spo2": get_value_from_data("SpO2", data),
-        "resp": get_value_from_data("respiratory-rate", data),
-        "pulse": get_value_from_data("heart-rate", data)
-        or get_value_from_data("pulse-rate", data),
+
+    return DailyRoundObservation(
+        taken_at=observation.last_updated,
+        spo2=get_value_from_data(ObservationID.SPO2, data),
+        ventilator_spo2=get_value_from_data(ObservationID.SPO2, data),
+        resp=get_value_from_data(ObservationID.RESPIRATORY_RATE, data),
+        pulse=get_value_from_data(ObservationID.HEART_RATE, data)
+        or get_value_from_data(ObservationID.PULSE_RATE, data),
         **temperature_data,
-        "bp": get_value_from_data("blood-pressure", data) or {},
-        "rounds_type": "AUTOMATED",
-        "is_parsed_by_ocr": False,
-    }
-    serialized_response = DailyRoundObservationSerializer(response, data)
-    if serialized_response.is_valid():
-        return serialized_response.validated_data
+        bp=get_value_from_data(ObservationID.BLOOD_PRESSURE, data) or {},
+        rounds_type="AUTOMATED",
+        is_parsed_by_ocr=False
+    )
+
+
+def get_value_from_data(
+    type: ObservationID,
+    data: Dict[
+        ObservationID,
+        Union[Observation, List[Observation]],
+    ],
+):
+    if not data or type not in data:
+        return None
+
+    observation: Observation = (
+        data[type][-1] if isinstance(data[type], list) else data[type]
+    )
+
+    if not observation.date_time:
+        return None
+
+    ist_timezone = pytz.timezone("Asia/Kolkata")
+    converted_date_time = observation.date_time.astimezone(ist_timezone)
+
+    is_stale = (
+        pytz.utc.localize(datetime.now()).astimezone(ist_timezone) - converted_date_time
+    ).total_seconds() * 1000 > settings.UPDATE_INTERVAL
+
+    if is_stale or not is_valid(observation):
+        return None
+
+    if type in [
+        ObservationID.BODY_TEMPERATURE1,
+        ObservationID.BODY_TEMPERATURE2,
+    ]:
+        if observation.low_limit < observation.value < observation.high_limit:
+            return {
+                "temperature": observation.value,
+                "temperature_measured_at": converted_date_time.isoformat(),
+            }
+        return None
+    elif type == "blood-pressure":
+        return {
+            "systolic": observation.systolic.value if observation.systolic else None,
+            "diastolic": observation.diastolic.value if observation.diastolic else None,
+        }
     else:
-        return serialized_response.errors
+        return observation.value
+
+
+def get_stored_observations():
+    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
+    if observations is None:
+        observations = []
+        cache.set(settings.REDIS_OBSERVATIONS_KEY, observations)
+
+    return ObservationList.model_validate(observations).root
+
+
+def update_stored_observations(observation_list: List[Observation]):
+    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
+    if observations is None:
+        observations = []
+    observations.extend(observation_list)
+    cache.set(settings.REDIS_OBSERVATIONS_KEY, observations)
+
+
+def get_static_observations(device_id: DeviceID):
+    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
+    current_time = datetime.now()
+    # last one hour data matching the device id
+    valid_observations: List[Observation] = []
+    if not observations:
+        return None
+
+    for observation in observations:
+        parsed_observation = Observation.model_validate(observation)
+        if (
+            (current_time - parsed_observation.taken_at).total_seconds() * 1000
+            < settings.UPDATE_INTERVAL
+        ) and parsed_observation.device_id == device_id:
+            valid_observations.append(parsed_observation)
+
+    if not valid_observations:
+        return None
+    return generate_static_observations(observation_list=valid_observations)
+
+
+def generate_static_observations(observation_list: List[Observation]):
+    observations_dict = {}
+    for observation in observation_list:
+        observation_type = observation.observation_id
+        if observation_type in observations_dict:
+            observations_dict[observation_type].append(observation)
+        else:
+            observations_dict[observation_type] = [observation]
+
+    return StaticObservation(
+        observations=observations_dict, last_updated=observation_list[-1].taken_at
+    )

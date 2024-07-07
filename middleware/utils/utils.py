@@ -1,11 +1,13 @@
 from typing import Dict, List
 from uuid import UUID
-from datetime import datetime
 import requests
 from django.conf import settings
 
 from middleware.token_generator import generate_jwt
+from typing import List, Dict, TypeVar, Any
+from pydantic import BaseModel
 
+T = TypeVar("T", bound=BaseModel)
 
 def _get_headers(claims: dict = None) -> dict:
     return {
@@ -19,6 +21,17 @@ def group_by(data, key):
     grouped_data: Dict[str, List] = {}
     for item in data:
         group_key = item[key]
+        if group_key in grouped_data:
+            grouped_data[group_key].append(item)
+        else:
+            grouped_data[group_key] = [item]
+    return grouped_data
+
+
+def group_by(data: List[T], key: str) -> Dict[Any, List[T]]:
+    grouped_data: Dict[Any, List[T]] = {}
+    for item in data:
+        group_key = getattr(item, key)
         if group_key in grouped_data:
             grouped_data[group_key].append(item)
         else:
