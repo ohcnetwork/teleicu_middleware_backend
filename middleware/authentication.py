@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import HTTP_HEADER_ENCODING
 import logging
 from django.core.cache import cache
@@ -23,17 +24,16 @@ class MiddlewareUser(AnonymousUser):
     Read-only user class for middleware authentication
     """
 
-    def __init__(self, facility, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.facility = facility
-        # self.username = f"middleware{facility.external_id}"
         self.username = f"middleware_123"
 
     @property
     def is_authenticated(self):
         return True
 
-class MiddlewareAuthentication(JWTAuthentication):
+
+class CareAuthentication(JWTAuthentication):
     """
     An authentication plugin that authenticates requests through a JSON web
     token provided in a request header.
@@ -55,15 +55,13 @@ class MiddlewareAuthentication(JWTAuthentication):
     def open_id_authenticate(self, url, token):
         public_key_response = self.get_public_key(url)
         public_key = jwt.algorithms.RSAAlgorithm.from_jwk(public_key_response)
-        print(public_key)
-        print(jwt.decode(token, key=public_key, algorithms=["RS256"]))
         return jwt.decode(token, key=public_key, algorithms=["RS256"])
 
     def authenticate_header(self, request):
         return f'{self.auth_header_type} realm="{self.www_authenticate_realm}"'
 
-    def get_user(self, _: Token, facility: int):
-        return MiddlewareUser(facility=facility)
+    def get_user(self, _: Token):
+        return MiddlewareUser()
 
     def authenticate(self, request):
         header = self.get_header(request)
@@ -72,27 +70,14 @@ class MiddlewareAuthentication(JWTAuthentication):
 
         raw_token = self.get_raw_token(header)
 
-        # if raw_token is None or self.facility_header not in request.headers:
-        #     return None
-
         if raw_token is None:
             return None
 
-        # external_id = request.headers[self.facility_header]
-
-        # try:
-        #     facility = Facility.objects.get(external_id=external_id)
-        # except (Facility.DoesNotExist, ValidationError) as e:
-        #     raise InvalidToken({"detail": "Invalid Facility", "messages": []}) from e
-
-        # if not facility.middleware_address:
-        #     raise InvalidToken({"detail": "Facility not connected to a middleware"})
-
-        open_id_url = f"http://127.0.0.1:9000/.well-known/openid-configuration"
+        open_id_url = settings.CARE_JWK_URL
         validated_token = self.get_validated_token(open_id_url, raw_token)
 
         # return self.get_user(validated_token, facility), validated_token
-        return self.get_user(validated_token, 123), validated_token
+        return self.get_user(validated_token), validated_token
 
     def get_raw_token(self, header):
         """

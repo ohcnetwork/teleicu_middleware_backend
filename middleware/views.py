@@ -18,14 +18,13 @@ from .utils.utils import group_by
 from .types.observations import DeviceID
 
 
-from .serializers.observation import (
+from middleware.types.observations import (
     Observation,
     ObservationID,
     ObservationList,
-    Status,
 )
 
-from .authentication import MiddlewareAuthentication
+from .authentication import CareAuthentication
 
 active_devices: List[str] = []
 
@@ -34,10 +33,6 @@ active_devices: List[str] = []
 # in order to get continuous data we take the previous data
 # to store previous value of blood pressure per device_id
 blood_pressure_data: Dict[DeviceID, Observation] = {}
-
-
-# last_observation_data: Dict[ObservationID, Dict[DeviceID, Optional[Observation]]] = {}
-# static_observations: List[StaticObservation] = []
 
 
 @api_view(["POST"])
@@ -50,7 +45,7 @@ def get_mock_request_list(request):
 
 
 @api_view(["GET"])
-@authentication_classes([MiddlewareAuthentication])
+@authentication_classes([CareAuthentication])
 def sample_authentication(request):
     return Response({"result": "Authenticated"}, status=status.HTTP_200_OK)
 

@@ -1,6 +1,7 @@
 from datetime import datetime
+import logging
 from typing import Dict, List, Union
-from middleware.serializers.observation import (
+from middleware.types.observations import (
     DailyRoundObservation,
     Observation,
     ObservationID,
@@ -11,197 +12,166 @@ import pytz
 from django.core.cache import cache
 from django.conf import settings
 from middleware.types.observations import DeviceID, StaticObservation
+logger = logging.getLogger(__name__)
 
-
-messages = [
-    {
-        "message": "Leads Off",
+messages = {
+    "Leads Off": {
         "description": "ECG leads disconnected",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Asystole",
+    "Asystole": {
         "description": "Arrhythmia - Asystole",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Missed Beat",
+    "Missed Beat": {
         "description": "Arrhythmia – Missed beat",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Tachy Cardia",
+    "Tachy Cardia": {
         "description": "Arrhythmia - Tachycardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Brady Cardia",
+    "Brady Cardia": {
         "description": "Arrhythmia – Brady cardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "VFIB",
+    "VFIB": {
         "description": "Arrhythmia - Ventricular Fibrillation",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "VTAC",
+    "VTAC": {
         "description": "Arrhythmia - Ventricular Tachycardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "R ON T",
+    "R ON T": {
         "description": "Arrhythmia – R on T",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "COUPLET",
+    "COUPLET": {
         "description": "Arrhythmia – PVC couplet",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "BIGEMINY",
+    "BIGEMINY": {
         "description": "Arrhythmia - Bigeminy",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "TRIGEMINY",
+    "TRIGEMINY": {
         "description": "Arrhythmia - Trigeminy",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "PNC",
+    "PNC": {
         "description": "Arrhythmia - Premature Nodal contraction",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "PNP",
+    "PNP": {
         "description": "Arrhythmia - Pace not pacing",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "ARRHYTHMIA",
+    "ARRHYTHMIA": {
         "description": "Arrhythmia present, couldn’t detect the specific arrhythmia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Run of PVCs",
+    "Run of PVCs": {
         "description": "Arrhythmia – Run of PVCs",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Ventricular Premature Beat",
+    "Ventricular Premature Beat": {
         "description": "Arrhythmia – Ventricular Premature Beat",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "PVC High",
+    "PVC High": {
         "description": "Arrhythmia – PVC High",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Non Standard Ventricular Tachycardia",
+    "Non Standard Ventricular Tachycardia": {
         "description": "Arrhythmia – Nonstandard Ventricular Tachycardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Extreme Tachycardia",
+    "Extreme Tachycardia": {
         "description": "Arrhythmia – Extreme Tachycardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Extreme Bradycardia",
+    "Extreme Bradycardia": {
         "description": "Arrhythmia – Extreme Bradycardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Pause",
+    "Pause": {
         "description": "Arrhythmia – Heart Pause",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Irregular Rhythm",
+    "Irregular Rhythm": {
         "description": "Arrhythmia – Irregular rhythm",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Ventricular Bradycardia",
+    "Ventricular Bradycardia": {
         "description": "Arrhythmia – Ventricular tachycardia",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Ventricular Rhythm",
+    "Ventricular Rhythm": {
         "description": "Arrhythmia – Ventricular rhythm.",
         "validity": "The HR value is null, if invalid",
         "observationType": "ECG",
     },
-    {
-        "message": "Wrong cuff",
+    "Wrong cuff": {
         "description": "Wrong cuff for the patient (for example paediatric NIBP being measured using ADULT cuff)",
         "validity": "",
         "observationType": "NIBP",
     },
-    {
-        "message": "Connect Cuff",
+    "Connect Cuff": {
         "description": "No cuff / loose cuff",
         "validity": "",
         "observationType": "NIBP",
     },
-    {
-        "message": "Measurement error",
+    "Measurement error": {
         "description": "Measurement taken is erroneous",
         "validity": "",
         "observationType": "NIBP",
     },
-    {
-        "message": "No finger in probe",
+    "No finger in probe": {
         "description": "SpO2 sensor has fallen off the patient finger",
         "validity": "The SpO2, PR value is invalid if this message is present. Value will be set to null.",
         "observationType": "SPO2",
     },
-    {
-        "message": "Probe unplugged",
+    "Probe unplugged": {
         "description": "The SPO2 sensor probe is disconnected from the patient monitor.",
         "validity": "The SpO2, PR value is invalid if this message is present. Value will be set to null.",
         "observationType": "SPO2",
     },
-    {
-        "message": "Leads off",
+    "Leads off": {
         "description": "Respiration leads have fallen off / disconnected from the patient",
         "validity": "The value is null if invalid",
         "observationType": "Respiration",
     },
-    {
-        "message": "Measurement invalid",
+    "Measurement invalid": {
         "description": "The measured value is invalid",
         "validity": "When this message is present, the measured value is invalid.",
         "observationType": "Temperature",
         "invalid": True,
     },
-]
+}
 
 
 def is_valid(observation: Observation):
@@ -219,8 +189,7 @@ def is_valid(observation: Observation):
         return True
 
     message = observation.status.replace("Message-", "")
-    message_obj = next((m for m in messages if m["message"] == message), None)
-
+    message_obj = messages.get(message, None)
     if message_obj and message_obj.get("invalid"):
         return False
 
@@ -229,7 +198,7 @@ def is_valid(observation: Observation):
 
 def get_vitals_from_observations(ip_address: str):
 
-    print("Getting vitals from observations for the asset: %s", ip_address)
+    logger.info("Getting vitals from observations for the asset: %s", ip_address)
 
     observation: StaticObservation = get_static_observations(device_id=ip_address)
     if (

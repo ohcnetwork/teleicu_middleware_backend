@@ -1,5 +1,6 @@
+import logging
 from django.apps import AppConfig
-
+logger = logging.getLogger(__name__)
 
 class MiddlewareConfig(AppConfig):
     name = "middleware"
@@ -9,4 +10,4 @@ class MiddlewareConfig(AppConfig):
         # from middleware.tasks import retrieve_asset_config
 
         # retrieve_asset_config()
-        print("startup function called")
+        logger.info("startup function called")

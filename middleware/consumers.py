@@ -49,7 +49,6 @@ class observations(WebsocketConsumer):
         ip = self.scope["url_route"]["kwargs"].get("ip_address", None)
         if ip:
             self.room_group_name = f"ip_{ip}"
-            print(self.room_group_name)
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name, self.channel_name
             )
