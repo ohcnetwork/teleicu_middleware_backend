@@ -18,7 +18,7 @@ services:
     image: ghcr.io/deepch/rtsptoweb:latest
     container_name: roverr_rtsp_stream
     volumes:
-      - /teleicu/RTSPtoWeb/config.json:/config/config.json
+      - /home/teleicu/app/teleicu_middleware_backend/RtspConfig.json:/config/config.json
     ports:
       - "8080:8080"
 
