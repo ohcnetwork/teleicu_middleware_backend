@@ -169,7 +169,7 @@ CACHES = {
 
 # Configs
 CARE_URL = env("CARE_URL")
-FACILITYID = env("FACILITYID")
+FACILITY_ID = env("FACILITY_ID")
 CARE_JWK_URL = env("CARE_JWK_URL")
 JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))

@@ -18,7 +18,7 @@ def _get_headers(claims: dict = None) -> dict:
     return {
         "Authorization": "Middleware_Bearer " + generate_jwt(claims=claims),
         "Content-Type": "application/json",
-        "X-Facility-Id": settings.FACILITYID,
+        "X-Facility-Id": settings.FACILITY_ID,
     }
 
 

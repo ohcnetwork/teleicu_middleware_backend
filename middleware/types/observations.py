@@ -2,15 +2,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, NewType, Optional
 from pydantic import BaseModel, Field, RootModel
-from middleware.types.observations import Observation, ObservationID
 
 
 DeviceID = NewType("DeviceID", str)
-
-
-class StaticObservation(BaseModel):
-    observations: Dict[ObservationID, List[Observation]]
-    last_updated: datetime
 
 
 class ObservationID(str, Enum):
@@ -111,3 +105,8 @@ class DailyRoundObservation(BaseModel):
     taken_at: Optional[datetime] = None
     rounds_type: Optional[str] = None
     is_parsed_by_ocr: Optional[bool] = None
+
+
+class StaticObservation(BaseModel):
+    observations: Dict[ObservationID, List[Observation]]
+    last_updated: datetime
