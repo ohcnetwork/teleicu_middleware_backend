@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 
 from .open_id import PublicJWKsView
 from . import views
@@ -28,4 +28,5 @@ urlpatterns = [
     path("test/", views.test_route),
     path(".well-known/openid-configuration/", PublicJWKsView.as_view()),
     path("update_observations/", views.update_observations),
+    path('', include('middleware.camera.urls')),
 ]
