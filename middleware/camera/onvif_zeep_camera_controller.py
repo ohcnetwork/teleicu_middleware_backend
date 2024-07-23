@@ -1,7 +1,8 @@
 import logging
 from django.conf import settings
-from onvif import ONVIFCamera
+from onvif import ONVIFCamera, ONVIFError
 from middleware.camera.abstract_camera import AbstractCameraController
+from middleware.camera.exceptions import InvalidCameraCrendentialsException
 from middleware.camera.types import CameraAsset
 from middleware.camera.utils import wait_for_movement_completion
 
@@ -12,10 +13,19 @@ logger = logging.getLogger(__name__)
 class OnvifZeepCameraController(AbstractCameraController):
 
     def __init__(self, req: CameraAsset) -> None:
+        try:
+            cam = ONVIFCamera(
+                req.hostname, req.port, req.username, req.password, settings.WSDL_PATH
+            )
+        except ONVIFError as err:
+            logger.info(
+                "Exception raised while connecting to Camera with req: %s and reason: %s",
+                req,
+                err.reason,
+            )
 
-        cam = ONVIFCamera(
-            req.hostname, req.port, req.username, req.password, settings.WSDL_PATH
-        )
+            raise InvalidCameraCrendentialsException
+
         media = cam.create_media_service()
 
         logger.info("Create ptz service object")
@@ -66,8 +76,8 @@ class OnvifZeepCameraController(AbstractCameraController):
         pan = ptz_status.Position.PanTilt.x
         tilt = ptz_status.Position.PanTilt.y
         zoom = ptz_status.Position.Zoom.x
-        ptz_list = (pan, tilt, zoom)
-        return ptz_list
+        status = {"x": pan, "y": tilt, "zoom": zoom}
+        return status
 
     @wait_for_movement_completion
     def absolute_move(self, pan: float, tilt: float, zoom: float):
