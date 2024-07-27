@@ -1,14 +1,20 @@
 from datetime import datetime
 import logging
-from typing import Dict, List, Union
+import boto3
+
+from typing import Dict, List, Union, Optional
 from middleware.observation.types import (
     DailyRoundObservation,
     Observation,
     ObservationID,
     ObservationList,
     Status,
+    DataDumpRequest,
 )
-
+from sentry_sdk.crons import capture_checkin
+from sentry_sdk.crons.consts import MonitorStatus
+import json
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 import pytz
 from django.core.cache import cache
 from django.conf import settings
@@ -327,3 +333,73 @@ def generate_static_observations(observation_list: List[Observation]):
     return StaticObservation(
         observations=observations_dict, last_updated=observation_list[-1].taken_at
     )
+
+
+def get_data_for_s3_dump():
+    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
+    current_time = datetime.now()
+
+    if not observations:
+        return None
+    observation_data_to_dump: List[Observation] = []
+    for observation in observations:
+        parsed_observation = Observation.model_validate(observation)
+        if (
+            current_time - parsed_observation.taken_at
+        ).total_seconds() * 1000 > settings.UPDATE_INTERVAL:
+            observation_data_to_dump.append(parsed_observation)
+
+    return observation_data_to_dump
+
+
+def make_data_dump_to_json(request: DataDumpRequest):
+    check_in_id: Optional[str] = None
+
+    if request.monitor_options:
+        check_in_id = capture_checkin(
+            monitor_slug=request.monitor_options.slug,
+            status=MonitorStatus.IN_PROGRESS,
+            monitor_config=request.monitor_options.options,
+        )
+
+    try:
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=settings.S3_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+            endpoint_url=settings.S3_ENDPOINT_URL if settings.S3_ENDPOINT_URL else None,
+        )
+        if not settings.S3_BUCKET_NAME:
+            raise Exception("S3 Bucket Name not found")
+        data = [
+            observation.model_dump(mode="json", by_alias=True)
+            for observation in request.data
+        ]
+        s3.upload_fileobj(data, settings.S3_BUCKET_NAME, request.key)
+        logger.info("Successfully uploaded data to S3")
+
+        if request.monitor_options and check_in_id:
+            capture_checkin(
+                check_in_id=check_in_id,
+                monitor_slug=request.monitor_options.slug,
+                status=MonitorStatus.OK,
+            )
+    except (NoCredentialsError, PartialCredentialsError) as e:
+        logger.error("Failed to upload data to S3 due to credential issues")
+        if request.monitor_options and check_in_id:
+            capture_checkin(
+                check_in_id=check_in_id,
+                monitor_slug=request.monitor_options.slug,
+                status=MonitorStatus.ERROR,
+            )
+        logger.error(e)
+
+    except Exception as e:
+        logger.error("Failed to upload data to S3")
+        if request.monitor_options and check_in_id:
+            capture_checkin(
+                check_in_id=check_in_id,
+                monitor_slug=request.monitor_options.slug,
+                status=MonitorStatus.ERROR,
+            )
+        logger.error(e)

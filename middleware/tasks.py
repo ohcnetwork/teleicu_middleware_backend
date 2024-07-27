@@ -4,10 +4,12 @@ from celery import shared_task
 import requests
 from django.conf import settings
 import logging
-
+from datetime import datetime
 from middleware.models import Asset, AssetClasses
 from middleware.observation.types import (
     DailyRoundObservation,
+    DataDumpRequest,
+    MonitorOptions,
 )
 
 from middleware.observation.utils import get_vitals_from_observations
@@ -15,6 +17,13 @@ from middleware.utils import (
     _get_headers,
     file_automated_daily_rounds,
     get_patient_id,
+)
+
+
+from middleware.observation.utils import (
+    get_data_for_s3_dump,
+    get_vitals_from_observations,
+    make_data_dump_to_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,3 +82,23 @@ def automated_daily_rounds():
         file_automated_daily_rounds(
             consultation_id=consultation_id, asset_id=monitor.id, vitals=vitals
         )
+
+
+@shared_task
+def automated_daily_rounds():
+    data = get_data_for_s3_dump()
+    make_data_dump_to_json(
+        req=DataDumpRequest(
+            data=data,
+            key=f"{settings.hostname}/{datetime.now()}.json",
+            monitor_options=MonitorOptions(
+                slug="s3_observations_dump",
+                options={
+                    "schedule": {
+                        "type": "crontab",
+                        "value": "30 * * * *",
+                    },
+                },
+            ),
+        )
+    )

@@ -7,7 +7,7 @@ class MiddlewareConfig(AppConfig):
     verbose_name = "Middleware"
 
     def ready(self):
-        # from middleware.tasks import retrieve_asset_config
+        from middleware.tasks import retrieve_asset_config
 
-        # retrieve_asset_config()
-        logger.info("startup function called")
+        # countdown to get the middleware running for authentication
+        retrieve_asset_config.apply_async(countdown=2)

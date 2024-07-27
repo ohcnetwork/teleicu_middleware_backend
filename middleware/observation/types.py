@@ -22,11 +22,6 @@ class ObservationID(str, Enum):
     WAVEFORM_PLETH = "waveform_Pleth"
     WAVEFORM_RESPIRATION = "waveform_Respiration"
 
-    @classmethod
-    def as_choices(cls):
-        """Return choices for use in a Serializer field."""
-        return [(x.value, x.value) for x in cls]
-
 
 class Status(str, Enum):
     FINAL = "final"
@@ -110,3 +105,14 @@ class DailyRoundObservation(BaseModel):
 class StaticObservation(BaseModel):
     observations: Dict[ObservationID, List[Observation]]
     last_updated: datetime
+
+
+class MonitorOptions(BaseModel):
+    slug: str
+    options: Optional[Dict]
+
+
+class DataDumpRequest(BaseModel):
+    data: List[Observation]
+    key: str
+    monitor_options: MonitorOptions
