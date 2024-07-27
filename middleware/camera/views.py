@@ -11,6 +11,8 @@ from middleware.camera.types import (
 )
 import logging
 
+from middleware.camera.utils import is_camera_locked
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,9 +65,18 @@ class CameraViewSet(viewsets.ViewSet):
             cam_request = CameraAssetPresetRequest.model_validate(request.data)
         except ValidationError as e:
             return Response(e.errors(), status=status.HTTP_400_BAD_REQUEST)
+
+        if is_camera_locked(cam_request.hostname):
+            logger.info("Camera with host: %s is locked.", cam_request.hostname)
+            return Response(
+                {
+                    "message": "Camera is Locked!",
+                },
+                status=status.HTTP_423_LOCKED,
+            )
+
         cam = OnvifZeepCameraController(req=cam_request)
         response = cam.go_to_preset(preset_name=cam_request.preset_name)
-        print("retusn", response)
         if not response:
             response = f"Preset {cam_request.preset_name} Not Found"
             return Response(response, status=status.HTTP_404_NOT_FOUND)
@@ -77,7 +88,16 @@ class CameraViewSet(viewsets.ViewSet):
             cam_request = CameraAssetMoveRequest.model_validate(request.data)
         except ValidationError as e:
             return Response(e.errors(), status=status.HTTP_400_BAD_REQUEST)
-        print(cam_request)
+
+        if is_camera_locked(cam_request.hostname):
+            logger.info("Camera with host: %s is locked.", cam_request.hostname)
+            return Response(
+                {
+                    "message": "Camera is Locked!",
+                },
+                status=status.HTTP_423_LOCKED,
+            )
+
         cam = OnvifZeepCameraController(req=cam_request)
         cam.absolute_move(pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom)
         return Response(
@@ -92,9 +112,41 @@ class CameraViewSet(viewsets.ViewSet):
         except ValidationError as e:
             return Response(e.errors(), status=status.HTTP_400_BAD_REQUEST)
 
+        if is_camera_locked(cam_request.hostname):
+            logger.info("Camera with host: %s is locked.", cam_request.hostname)
+            return Response(
+                {
+                    "message": "Camera is Locked!",
+                },
+                status=status.HTTP_423_LOCKED,
+            )
+
         cam = OnvifZeepCameraController(req=cam_request)
         cam.relative_move(pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom)
         return Response(
             {"status": "success", "message": "Camera position updated!"},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post"])
+    def snapshot_at_location(self, request):
+        try:
+            cam_request = CameraAssetMoveRequest.model_validate(request.data)
+        except ValidationError as e:
+            return Response(e.errors(), status=status.HTTP_400_BAD_REQUEST)
+
+        if is_camera_locked(cam_request.hostname):
+            logger.info("Camera with host: %s is locked.", cam_request.hostname)
+            return Response(
+                {
+                    "message": "Camera is Locked!",
+                },
+                status=status.HTTP_423_LOCKED,
+            )
+        cam = OnvifZeepCameraController(req=cam_request)
+        cam.relative_move(pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom)
+        snapshot_uri = cam.get_snapshot_uri()
+        return Response(
+            {"status": "success", "uri": snapshot_uri},
             status=status.HTTP_200_OK,
         )

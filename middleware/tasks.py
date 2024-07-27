@@ -6,12 +6,12 @@ from django.conf import settings
 import logging
 
 from middleware.models import Asset, AssetClasses
-from middleware.types.observations import (
+from middleware.observation.types import (
     DailyRoundObservation,
 )
 
-from middleware.utils.observation_utils import get_vitals_from_observations
-from middleware.utils.utils import (
+from middleware.observation.utils import get_vitals_from_observations
+from middleware.utils import (
     _get_headers,
     file_automated_daily_rounds,
     get_patient_id,

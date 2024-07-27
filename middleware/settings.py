@@ -17,7 +17,7 @@ from pathlib import Path
 import environ
 import json
 
-from .generate_jwk import generate_encoded_jwks
+from middleware.utils import generate_encoded_jwks
 
 env = environ.Env()
 environ.Env.read_env()
@@ -171,6 +171,10 @@ CACHES = {
 CARE_URL = env("CARE_URL")
 FACILITY_ID = env("FACILITY_ID")
 CARE_JWK_URL = env("CARE_JWK_URL")
+# CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
+CARE_VERIFY_TOKEN_URL = "https://careapi.ohc.network/api/v1/auth/token/verify/"
+
+
 JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))
 )

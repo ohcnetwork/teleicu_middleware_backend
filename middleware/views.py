@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from uuid import UUID
 import requests
 from middleware.tasks import retrieve_asset_config
-from middleware.utils.observation_utils import update_stored_observations
+from middleware.observation.utils import update_stored_observations
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes
 from rest_framework.response import Response
@@ -13,12 +13,12 @@ from asgiref.sync import async_to_sync
 from django.conf import settings
 
 
-from .utils.utils import group_by
+from .utils import group_by
 
-from .types.observations import DeviceID
+from .observation.types import DeviceID
 
 
-from middleware.types.observations import (
+from middleware.observation.types import (
     Observation,
     ObservationID,
     ObservationList,

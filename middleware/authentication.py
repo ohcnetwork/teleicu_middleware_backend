@@ -3,7 +3,10 @@ from rest_framework import HTTP_HEADER_ENCODING
 import logging
 from django.core.cache import cache
 import requests
+from rest_framework import status
+from channels.auth import AuthMiddlewareStack
 
+from channels.middleware import BaseMiddleware
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import jwt
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken
@@ -11,6 +14,7 @@ from django.core.exceptions import ValidationError
 
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import Token
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -114,3 +118,37 @@ class CareAuthentication(JWTAuthentication):
             logger.info(e, "Token: ", raw_token)
 
         raise InvalidToken({"detail": "Given token not valid for any token type"})
+
+
+class TokenAuthMiddleware(BaseMiddleware):
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        headers = dict(scope["headers"])
+        if b"sec-websocket-protocol" in headers:
+            protocols = headers[b"sec-websocket-protocol"].decode().split(", ")
+            for protocol in protocols:
+                if protocol.startswith("access_token."):
+                    token = protocol.split(".", 1)[1]
+                    if self.verify_token(token=token):
+                        # user = await self.get_user(token)
+                        # scope["user"] = user
+                        # return await super().__call__(scope, receive, send)
+                        print("authenticated")
+
+                        return await self.inner(dict(scope), receive, send)
+
+    async def verify_token(self, token: str) -> bool:
+        res = requests.post(settings.CARE_VERIFY_TOKEN_URL, data={"token": token})
+        res.raise_for_status()
+        return True
+
+
+def TokenAuthMiddlewareStack(inner):
+    """
+    middleware to support websocket ssh connection
+    from both session or by queries
+    """
+    return TokenAuthMiddleware(AuthMiddlewareStack(inner))

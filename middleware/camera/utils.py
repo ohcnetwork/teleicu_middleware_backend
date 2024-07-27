@@ -1,7 +1,7 @@
 from django.conf import settings
 import logging
 import functools
-from middleware.types.observations import DeviceID
+from middleware.observation.types import DeviceID
 from time import sleep
 from django.core.cache import cache
 

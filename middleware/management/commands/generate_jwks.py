@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from middleware.generate_jwk import generate_encoded_jwks
-
+from middleware.utils import generate_encoded_jwks
 
 
 class Command(BaseCommand):

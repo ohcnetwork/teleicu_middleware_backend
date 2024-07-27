@@ -1,17 +1,19 @@
 from datetime import datetime
 import logging
 from typing import Dict, List, Union
-from middleware.types.observations import (
+from middleware.observation.types import (
     DailyRoundObservation,
     Observation,
     ObservationID,
     ObservationList,
     Status,
 )
+
 import pytz
 from django.core.cache import cache
 from django.conf import settings
-from middleware.types.observations import DeviceID, StaticObservation
+from middleware.observation.types import DeviceID, StaticObservation
+
 logger = logging.getLogger(__name__)
 
 messages = {
