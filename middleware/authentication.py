@@ -1,6 +1,7 @@
 from django.conf import settings
 from rest_framework import HTTP_HEADER_ENCODING
 import logging
+from channels.exceptions import DenyConnection
 from django.core.cache import cache
 import requests
 from rest_framework import status
@@ -11,7 +12,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 import jwt
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken
 from django.core.exceptions import ValidationError
-
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import Token
 from rest_framework.response import Response
@@ -127,23 +128,46 @@ class TokenAuthMiddleware(BaseMiddleware):
 
     async def __call__(self, scope, receive, send):
         headers = dict(scope["headers"])
-        if b"sec-websocket-protocol" in headers:
-            protocols = headers[b"sec-websocket-protocol"].decode().split(", ")
-            for protocol in protocols:
-                if protocol.startswith("access_token."):
-                    token = protocol.split(".", 1)[1]
-                    if self.verify_token(token=token):
-                        # user = await self.get_user(token)
-                        # scope["user"] = user
-                        # return await super().__call__(scope, receive, send)
-                        print("authenticated")
+        try:
+            if b"sec-websocket-protocol" in headers:
+                protocols = headers[b"sec-websocket-protocol"].decode().split(", ")
+                for idx, protocol in enumerate(protocols):
+                    if protocol.startswith("Token"):
+                        token = protocols[idx + 1]
 
+                        self.is_token_verified(token=token)
                         return await self.inner(dict(scope), receive, send)
+            raise DenyConnection()
+        except DenyConnection:
+            logger.info("Denying Connection due to token not valid or provided")
+            await self.close_connection(send)
+            # await self.close(code=4001)
 
-    async def verify_token(self, token: str) -> bool:
-        res = requests.post(settings.CARE_VERIFY_TOKEN_URL, data={"token": token})
-        res.raise_for_status()
-        return True
+    async def close_connection(self, send):
+        # Send close frame
+
+        await send(
+            {
+                "type": "websocket.close",
+                "code": 4000,  # Custom close code
+                "reason": "Authentication failed",
+            }
+        )
+
+    def is_token_verified(self, token: str) -> bool:
+        try:
+            # Decode the token
+            key = settings.JWKS.as_dict()["keys"][0]
+            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+            value = jwt.decode(token, key=public_key, algorithms=["RS256"])
+            return value
+
+        except ExpiredSignatureError as exc:
+            logger.info("Token Expired with error: %s", exc)
+            raise DenyConnection()
+        except InvalidTokenError as exc:
+            logger.info("Invalid Token with error: %s", exc)
+            raise DenyConnection()
 
 
 def TokenAuthMiddlewareStack(inner):

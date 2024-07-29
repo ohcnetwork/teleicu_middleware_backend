@@ -78,6 +78,9 @@ class Observation(BaseModel):
     data: Optional[str] = None
     taken_at: datetime = Field(exclude=True, default=datetime.now())
 
+    class Config:
+        populate_by_name = True
+
 
 class ObservationList(RootModel):
     root: List[Observation]

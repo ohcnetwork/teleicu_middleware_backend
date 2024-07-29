@@ -375,7 +375,12 @@ def make_data_dump_to_json(request: DataDumpRequest):
             observation.model_dump(mode="json", by_alias=True)
             for observation in request.data
         ]
-        s3.upload_fileobj(data, settings.S3_BUCKET_NAME, request.key)
+        s3.put_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=request.key,
+            Body=data,
+            ContentType="application/json",
+        )
         logger.info("Successfully uploaded data to S3")
 
         if request.monitor_options and check_in_id:

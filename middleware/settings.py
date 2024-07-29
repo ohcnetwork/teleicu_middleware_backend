@@ -172,7 +172,7 @@ CARE_URL = env("CARE_URL")
 FACILITY_ID = env("FACILITY_ID")
 CARE_JWK_URL = env("CARE_JWK_URL")
 # CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
-CARE_VERIFY_TOKEN_URL = "https://careapi.ohc.network/api/v1/auth/token/verify/"
+CARE_VERIFY_TOKEN_URL = "http://127.0.0.1:9000/api/v1/auth/token/verify/"
 
 
 JWKS = JsonWebKey.import_key_set(
@@ -182,7 +182,7 @@ CELERY_BROKER_URL = "redis://127.0.0.1:6379"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 HOST_NAME = env("HOST_NAME")
-CSRF_TRUSTED_ORIGINS = ["https://appliances-trek-termination-hotel.trycloudflare.com"]
+CSRF_TRUSTED_ORIGINS = ["https://portraits-katie-equation-samba.trycloudflare.com"]
 
 
 # Observations
@@ -197,3 +197,10 @@ HOSTNAME=env("HOSTNAME")
 ONVIF_USERNAME=env("ONVIF_USERNAME")
 PASSWORD=env("PASSWORD")
 PORT=env("PORT")
+
+
+# s3
+S3_ACCESS_KEY_ID = ""
+S3_SECRET_ACCESS_KEY = ""
+S3_ENDPOINT_URL = ""
+S3_BUCKET_NAME = ""

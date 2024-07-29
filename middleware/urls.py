@@ -23,10 +23,10 @@ from . import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("send_mock_updates/", views.get_mock_request_list),
-    path("authenticate/", views.sample_authentication),
     path("test/", views.test_route),
     path(".well-known/openid-configuration/", PublicJWKsView.as_view()),
-    path("update_observations/", views.update_observations),
-    path('', include('middleware.camera.urls')),
+    path("", include("middleware.observation.urls")),
+    path("", include("middleware.camera.urls")),
+    path("send_mock_updates/", views.get_mock_request_list),
+    path("verify_token/", views.verify_token),
 ]

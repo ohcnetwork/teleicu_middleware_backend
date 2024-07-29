@@ -73,6 +73,7 @@ wcwidth = "==0.2.13"
 onvif-zeep = "*"
 sentry-sdk = "*"
 boto3 = "*"
+django-factory-boy = "*"
 
 [dev-packages]
 
