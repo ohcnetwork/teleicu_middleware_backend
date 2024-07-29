@@ -25,7 +25,6 @@ def get_mock_request_list(request):
 
 @api_view(["POST"])
 def verify_token(request):
-    print(request.data)
     token = request.data["token"]
 
     if not token:

@@ -64,7 +64,6 @@ class OnvifZeepCameraController(AbstractCameraController):
             if preset_name == preset.Name:
                 request.PresetToken = preset.token
                 self.camera_ptz.GotoPreset(request)
-                print("preset_name", preset_name)
                 return preset_name
         logger.warning("Preset: %s  not found!", preset_name)
         return None
