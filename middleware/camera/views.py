@@ -47,7 +47,7 @@ class CameraViewSet(viewsets.ViewSet):
             logger.error("An exception occurred while getting presets: %s", exc)
             return Response(exc.errors(), status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_name="presets")
     def set_preset(self, request):
         try:
             cam_request = CameraAssetPresetRequest.model_validate(request.data)
@@ -59,7 +59,7 @@ class CameraViewSet(viewsets.ViewSet):
             logger.error("An exception occurred while getting presets: %s", exc)
             return Response(exc.errors(), status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_name="gotoPreset")
     def go_to_preset(self, request):
         try:
             cam_request = CameraAssetPresetRequest.model_validate(request.data)
@@ -82,7 +82,7 @@ class CameraViewSet(viewsets.ViewSet):
             return Response(response, status=status.HTTP_404_NOT_FOUND)
         return Response(response, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_name="absoluteMove")
     def absolute_move(self, request):
         try:
             cam_request = CameraAssetMoveRequest.model_validate(request.data)
@@ -105,7 +105,7 @@ class CameraViewSet(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_name="relativeMove")
     def relative_move(self, request):
         try:
             cam_request = CameraAssetMoveRequest.model_validate(request.data)
@@ -128,7 +128,7 @@ class CameraViewSet(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_name="snapshotAtLocation")
     def snapshot_at_location(self, request):
         try:
             cam_request = CameraAssetMoveRequest.model_validate(request.data)
