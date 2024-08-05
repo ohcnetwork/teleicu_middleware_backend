@@ -92,3 +92,40 @@ class TestObservation(UnitTest):
             ),
         ]
         mock_async_to_sync.assert_has_calls(expected_calls, any_order=True)
+
+    @patch("middleware.observation.views.get_channel_layer")
+    @patch("middleware.observation.views.async_to_sync")
+    def test_observations_without_blood_pressure(
+        self, mock_async_to_sync, mock_get_channel_layer
+    ):
+        """Test to check if the data for previous blood pressure is passed to the web socket consumers if blood pressure is not present"""
+        device_1_observation_1 = ObservationFactory(
+            device_id="1", observation_id=ObservationID.BLOOD_PRESSURE
+        )
+        device_1_observation_2 = ObservationFactory(
+            device_id="1", observation_id=ObservationID.BODY_TEMPERATURE1
+        )
+        update_blood_pressure([device_1_observation_1])
+
+        mock_channel_layer = MagicMock()
+        mock_get_channel_layer.return_value = mock_channel_layer
+        store_and_send_observations(
+            data=[device_1_observation_2.model_dump(mode="json", by_alias=True)]
+        )
+
+        self.assertEqual(1, mock_async_to_sync.call_count)
+
+        expected_call = [
+            call(mock_channel_layer.group_send),
+            call()(
+                "ip_1",
+                {
+                    "type": "send_observation",
+                    "message": [
+                        device_1_observation_2.model_dump(mode="json", by_alias=True),
+                        device_1_observation_1.model_dump(mode="json", by_alias=True),
+                    ],
+                },
+            ),
+        ]
+        mock_async_to_sync.assert_has_calls(expected_call)
