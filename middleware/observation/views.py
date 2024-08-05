@@ -40,6 +40,28 @@ def sample_authentication(request):
 @api_view(["POST"])
 def update_observations(request):
     data = flatten_observations(request.data)
+    store_and_send_observations(data)
+
+    return Response({"result": "Successful"}, status=status.HTTP_200_OK)
+
+
+def update_blood_pressure(observations: List[Observation]):
+    for observation in observations:
+        if observation.observation_id == ObservationID.BLOOD_PRESSURE:
+            blood_pressure_data[observation.device_id] = observation
+
+
+def flatten_observations(observations):
+    if isinstance(observations, list):
+        flattened_list = []
+        for observation in observations:
+            flattened_list.extend(flatten_observations(observation))
+        return flattened_list
+    else:
+        return [observations]
+
+
+def store_and_send_observations(data: List):
     observation_data: List[Observation] = ObservationList.model_validate(data).root
 
     # TODO
@@ -68,21 +90,3 @@ def update_observations(request):
                 ],
             },
         )
-
-    return Response({"result": "Successful"}, status=status.HTTP_200_OK)
-
-
-def update_blood_pressure(observations: List[Observation]):
-    for observation in observations:
-        if observation.observation_id == ObservationID.BLOOD_PRESSURE:
-            blood_pressure_data[observation.device_id] = observation
-
-
-def flatten_observations(observations):
-    if isinstance(observations, list):
-        flattened_list = []
-        for observation in observations:
-            flattened_list.extend(flatten_observations(observation))
-        return flattened_list
-    else:
-        return [observations]
