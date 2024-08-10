@@ -175,4 +175,5 @@ def TokenAuthMiddlewareStack(inner):
     middleware to support websocket ssh connection
     from both session or by queries
     """
-    return TokenAuthMiddleware(AuthMiddlewareStack(inner))
+    # return TokenAuthMiddleware(AuthMiddlewareStack(inner))
+    return AuthMiddlewareStack(inner)

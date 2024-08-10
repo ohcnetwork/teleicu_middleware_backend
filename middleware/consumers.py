@@ -52,10 +52,11 @@ class observations(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name, self.channel_name
             )
-
-            self.accept(
-                "Token"
-            )  # https://github.com/django/channels/issues/1369#issuecomment-724299511
+            self.accept()
+            # self.accept(
+            #     "Token"
+            # )
+            # https://github.com/django/channels/issues/1369#issuecomment-724299511
 
     def disconnect(self, close_code):
         # Leave room group

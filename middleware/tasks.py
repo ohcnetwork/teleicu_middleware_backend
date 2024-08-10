@@ -12,6 +12,8 @@ from middleware.observation.types import (
     MonitorOptions,
 )
 
+from django.db.models import CharField
+from django.db.models.functions import Cast
 from middleware.observation.utils import get_vitals_from_observations
 from middleware.utils import (
     _get_headers,
@@ -38,18 +40,22 @@ def retrieve_asset_config():
 
     response.raise_for_status()
     data = response.json()
+
+    logger.info("Fetched  Asset ids: %s", data)
+    fetched_ids = [UUID(asset["id"]) for asset in data]
     existing_asset_ids = list(
         Asset.objects.filter(deleted=False).values_list("id", flat=True)
     )
     logger.info("Existing  Asset ids: %s", existing_asset_ids)
+
     missing_asset_ids = [
-        asset["id"] for asset in data if UUID(asset["id"]) not in existing_asset_ids
+        asset_id for asset_id in existing_asset_ids if asset_id not in fetched_ids
     ]
 
     logger.info("Missing  Asset ids: %s", missing_asset_ids)
 
     # Mark missing assets as deleted
-    deleted_count = Asset.objects.filter(id__in=missing_asset_ids).update(deleted=True)
+    deleted_count = Asset.objects.filter(id__in=missing_asset_ids).delete()
 
     logger.info("Deleted assets count: %s ", deleted_count)
 
