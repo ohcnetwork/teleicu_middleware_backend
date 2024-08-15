@@ -7,5 +7,6 @@ router = SimpleRouter(trailing_slash=False)
 router.register(r'', CameraViewSet, basename='camera')
 
 urlpatterns = [
-     path('', include(router.urls)),
+    path("", include(router.urls)),
 ]
+

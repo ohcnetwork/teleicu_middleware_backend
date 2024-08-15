@@ -14,9 +14,10 @@ class OnvifZeepCameraController(AbstractCameraController):
 
     def __init__(self, req: CameraAsset) -> None:
         try:
-            cam = ONVIFCamera(
-                req.hostname, req.port, req.username, req.password, settings.WSDL_PATH
-            )
+            # cam = ONVIFCamera(
+            #     req.hostname, req.port, req.username, req.password, settings.WSDL_PATH
+            # )
+            cam = ONVIFCamera(req.hostname, req.port, req.username, req.password)
         except ONVIFError as err:
             logger.info(
                 "Exception raised while connecting to Camera with req: %s and reason: %s",

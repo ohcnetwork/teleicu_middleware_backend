@@ -35,11 +35,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-^z7t*bx*ph&x(1t2s^v%coj-&a7qc0ws0laefrmmqv!tyx(_7^"
-
+APPEND_SLASH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", "ws://127.0.0.1", "127.0.0.1"]
+ALLOWED_HOSTS = ["*", "ws://127.0.0.1", "127.0.0.1", "teleicu_middleware:8090"]
 
 
 # Application definition
@@ -159,7 +159,7 @@ CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",  # Redis server location
+        "LOCATION": "redis://redis:6379/1",  # Redis server location
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -171,18 +171,17 @@ CACHES = {
 CARE_URL = env("CARE_URL")
 FACILITY_ID = env("FACILITY_ID")
 CARE_JWK_URL = env("CARE_JWK_URL")
-# CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
-CARE_VERIFY_TOKEN_URL = "http://127.0.0.1:9000/api/v1/auth/token/verify/"
+CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
 
 
 JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))
 )
-CELERY_BROKER_URL = "redis://127.0.0.1:6379"
+CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 HOST_NAME = env("HOST_NAME")
-CSRF_TRUSTED_ORIGINS = ["https://portraits-katie-equation-samba.trycloudflare.com"]
+CSRF_TRUSTED_ORIGINS = ["https://d22d-49-37-224-158.ngrok-free.app"]
 
 
 # Observations

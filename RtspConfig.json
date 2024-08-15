@@ -6,7 +6,7 @@
     "http_dir": "web",
     "http_login": "demo",
     "http_password": "demo",
-    "http_port": ":8083",
+    "http_port": ":8080",
     "https": false,
     "https_auto_tls": false,
     "https_auto_tls_name": "",
@@ -24,7 +24,7 @@
     "27aec28e-6181-4753-9acd-0456a75f0289": {
       "channels": {
         "0": {
-          "url": "rtsp://admin:Lilo%40123@192.168.68.116",
+          "url": "rtsp://remote_user:2jCkrCRSeahzKEU@192.168.68.116",
           "debug": false,
           "audio": true
         }

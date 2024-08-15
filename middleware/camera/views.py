@@ -47,7 +47,7 @@ class CameraViewSet(viewsets.ViewSet):
             logger.error("An exception occurred while getting presets: %s", exc)
             return Response(exc.errors(), status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["post"], url_path="presets")
+    @action(detail=False, methods=["post"], url_name="presets")
     def set_preset(self, request):
         try:
             cam_request = CameraAssetPresetRequest.model_validate(request.data)
@@ -105,11 +105,7 @@ class CameraViewSet(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(
-        detail=False,
-        methods=["post"],
-        url_path="relativeMove",
-    )
+    @action(detail=False, methods=["post"], url_path="relativeMove")
     def relative_move(self, request):
         try:
             cam_request = CameraAssetMoveRequest.model_validate(request.data)

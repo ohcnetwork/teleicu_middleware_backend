@@ -81,7 +81,6 @@ class CareAuthentication(JWTAuthentication):
         open_id_url = settings.CARE_JWK_URL
         validated_token = self.get_validated_token(open_id_url, raw_token)
 
-        # return self.get_user(validated_token, facility), validated_token
         return self.get_user(validated_token), validated_token
 
     def get_raw_token(self, header):
