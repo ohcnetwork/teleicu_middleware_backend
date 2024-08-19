@@ -14,16 +14,23 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from rest_framework.routers import SimpleRouter
 
 from django.contrib import admin
 from django.urls import path,include
 
 from .open_id import PublicJWKsView
 from . import views
+from middleware.views import MiddlewareHealthViewSet, home
+
+router = SimpleRouter(trailing_slash=False)
+router.register(r"health", MiddlewareHealthViewSet, basename="health")
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("test/", views.test_route),
+    path("", home, name="home"),
+    path("", include(router.urls)),
     path(".well-known/openid-configuration/", PublicJWKsView.as_view()),
     path("", include("middleware.observation.urls")),
     path("", include("middleware.camera.urls")),

@@ -18,7 +18,3 @@ COPY . /app
 WORKDIR /app
 
 EXPOSE 8090
-
-# runs the production server
-ENTRYPOINT ["python", "manage.py"]
-CMD ["runserver", "0.0.0.0:8090"]

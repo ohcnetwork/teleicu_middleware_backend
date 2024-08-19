@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, NewType, Optional
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field, RootModel, field_serializer
 
 
 DeviceID = NewType("DeviceID", str)
@@ -78,6 +78,10 @@ class Observation(BaseModel):
     data: Optional[str] = None
     taken_at: datetime = Field(exclude=True, default=datetime.now())
 
+    @field_serializer("date_time")
+    def serialize_dt(self, dt: datetime, _info):
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
     class Config:
         populate_by_name = True
 
@@ -89,7 +93,7 @@ class ObservationList(RootModel):
 class BloodPressureDailyRound(BaseModel):
     systolic: Optional[float] = None
     diastolic: Optional[float] = None
-    mean: Optional[float] = None
+    # mean: Optional[float] = None
 
 
 class DailyRoundObservation(BaseModel):

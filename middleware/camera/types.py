@@ -1,10 +1,7 @@
-
-
-
-
-
-from typing import Optional
+from typing import Dict, Optional
 from pydantic import AliasChoices, BaseModel, Field
+
+from middleware.observation.types import DeviceID
 
 
 class CameraAsset(BaseModel):
@@ -15,9 +12,16 @@ class CameraAsset(BaseModel):
     useSecure: Optional[bool]=None
 
 class CameraAssetPresetRequest(CameraAsset):
-    preset_name:str =Field(default=None, validation_alias=AliasChoices('preset', 'presetName'))
+    preset: int = Field(
+        default=None, validation_alias=AliasChoices("preset", "presetName")
+    )
 
 class CameraAssetMoveRequest(CameraAsset):
-    x:float
-    y:float
-    zoom:float
+    x: float
+    y: float
+    zoom: float
+
+
+class CameraStatus:
+    time: str
+    status: Dict[DeviceID, str]

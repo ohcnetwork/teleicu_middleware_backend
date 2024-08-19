@@ -38,8 +38,13 @@ services:
     build: 
       dockerfile: dev.Dockerfile
     container_name: teleicu_middleware
+    command: ["python", "manage.py" , "runserver" , "0.0.0.0:8090"]
+    volumes:
+      - .:/app
     depends_on:
+      - redis
       - roverr_rtsp_stream
+      - db
     env_file:
       - ./.env
     ports:
@@ -55,6 +60,62 @@ services:
     ports:
       - "8001:8001"
 
+  celery:
+    build: 
+      dockerfile: dev.Dockerfile
+    container_name: celery_worker
+    command: ["celery", "-A", "middleware.celery", "worker", "--loglevel=info"]
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - db
+      - teleicu_middleware
+
+  celery_beat:
+    build: 
+      dockerfile: dev.Dockerfile
+    container_name: celery_beat
+    command: ["celery", "-A", "middleware.celery", "beat", "--loglevel=info"]
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - db
+      - teleicu_middleware
+  
+  # celery-worker:
+  #   build:
+  #     dockerfile: dev.Dockerfile
+  #   container_name: celery_worker
+  #   command: celery -A your_project_name worker --loglevel=info
+  #   volumes:
+  #     - .:/app
+  #   working_dir: /app
+  #   depends_on:
+  #     - db
+  #     - redis
+  #     - celery-beat
+  #   env_file:
+  #     - ./.env
+
+  # celery-beat:
+  #   build:
+  #     dockerfile: dev.Dockerfile
+  #   container_name: celery_beat
+  #   command: celery -A your_project_name beat --loglevel=info
+  #   volumes:
+  #     - .:/app
+  #   working_dir: /app
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   env_file:
+  #     - ./.env
 
   # mock_cns_req:
   #   restart: always

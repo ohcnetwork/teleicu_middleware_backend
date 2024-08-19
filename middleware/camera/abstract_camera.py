@@ -6,7 +6,7 @@ from middleware.camera.types import CameraAsset
 class AbstractCameraController(ABC):
 
     @abstractmethod
-    def go_to_preset(self, preset_name: str):
+    def go_to_preset(self, preset_id: str):
         pass
 
     @abstractmethod
@@ -15,10 +15,6 @@ class AbstractCameraController(ABC):
 
     @abstractmethod
     def get_status(self, req: CameraAsset):
-        pass
-
-    @abstractmethod
-    def go_to_preset(self, req: CameraAsset):
         pass
 
     @abstractmethod

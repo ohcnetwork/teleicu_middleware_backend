@@ -1,16 +1,20 @@
-from typing import Optional
+from typing import Dict, Optional
 from uuid import UUID
 from celery import shared_task
 import requests
 from django.conf import settings
 import logging
 from datetime import datetime
+from middleware.camera.onvif_zeep_camera_controller import OnvifZeepCameraController
+from middleware.camera.types import CameraAsset
 from middleware.models import Asset, AssetClasses
 from middleware.observation.types import (
     DailyRoundObservation,
     DataDumpRequest,
+    DeviceID,
     MonitorOptions,
 )
+from middleware.redis_manager import redis_manager
 
 from django.db.models import CharField
 from django.db.models.functions import Cast
@@ -86,17 +90,19 @@ def automated_daily_rounds():
         logger.info("Vitals for Monitor having id:%s  is: %s", monitor.id, vitals)
 
         file_automated_daily_rounds(
-            consultation_id=consultation_id, asset_id=monitor.id, vitals=vitals
+            consultation_id=consultation_id,
+            asset_id=monitor.id,
+            vitals=vitals.model_dump(mode="json"),
         )
 
 
 @shared_task
-def automated_daily_rounds():
+def observations_s3_dump():
     data = get_data_for_s3_dump()
     make_data_dump_to_json(
         req=DataDumpRequest(
             data=data,
-            key=f"{settings.hostname}/{datetime.now()}.json",
+            key=f"{settings.HOSTNAME}/{datetime.now()}.json",
             monitor_options=MonitorOptions(
                 slug="s3_observations_dump",
                 options={
@@ -108,3 +114,24 @@ def automated_daily_rounds():
             ),
         )
     )
+
+
+@shared_task
+def store_camera_statuses():
+    cameras = Asset.objects.filter(type=AssetClasses.ONVIF.name, deleted=False)
+    device_data: Dict[DeviceID, str] = {}
+    for camera in cameras:
+        cam_request = CameraAsset(
+            hostname=str(camera.ip_address),
+            port=int(camera.port),
+            username=str(camera.username),
+            password=str(camera.password),
+        )
+        cam = OnvifZeepCameraController(req=cam_request)
+        response = cam.get_status()
+        if response and response.get("error") == "NO error":
+            device_data[camera.ip_address] = "up"
+        else:
+            device_data[camera.ip_address] = "down"
+
+    redis_manager.push_to_queue("camera_statuses", device_data)

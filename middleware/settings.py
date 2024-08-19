@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from authlib.jose import JsonWebKey
 import base64
 
@@ -40,8 +41,10 @@ APPEND_SLASH = False
 DEBUG = True
 
 ALLOWED_HOSTS = ["*", "ws://127.0.0.1", "127.0.0.1", "teleicu_middleware:8090"]
-
-
+CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOWED_ORIGINS = [
+#     "https://care-dev-middleware.10bedicu.in",
+# ]
 # Application definition
 
 INSTALLED_APPS = [
@@ -53,6 +56,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "corsheaders",
     "middleware",
     "django_extensions",
     "django_celery_beat",
@@ -60,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -73,7 +78,7 @@ ROOT_URLCONF = "middleware.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -134,7 +139,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    "middleware/static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -169,6 +178,7 @@ CACHES = {
 
 # Configs
 CARE_URL = env("CARE_URL")
+CARE_API = env("CARE_API")
 FACILITY_ID = env("FACILITY_ID")
 CARE_JWK_URL = env("CARE_JWK_URL")
 CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
@@ -178,15 +188,16 @@ JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))
 )
 CELERY_BROKER_URL = "redis://redis:6379"
+
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 HOST_NAME = env("HOST_NAME")
-CSRF_TRUSTED_ORIGINS = ["https://d22d-49-37-224-158.ngrok-free.app"]
-
+CSRF_TRUSTED_ORIGINS = ["https://care-dev-middleware.10bedicu.in"]
+MAX_QUEUE_SIZE = int(30)
 
 # Observations
 REDIS_OBSERVATIONS_KEY = env("REDIS_OBSERVATIONS_KEY")
-UPDATE_INTERVAL = env("UPDATE_INTERVAL")
+UPDATE_INTERVAL = int(eval(env("UPDATE_INTERVAL")))
 DEFAULT_LISTING_LIMIT = env("DEFAULT_LISTING_LIMIT")
 
 

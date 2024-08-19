@@ -74,6 +74,8 @@ onvif-zeep = "*"
 sentry-sdk = "*"
 boto3 = "*"
 django-factory-boy = "*"
+django-cors-headers = "*"
+psutil = "*"
 
 [dev-packages]
 

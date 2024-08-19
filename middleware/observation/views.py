@@ -1,6 +1,11 @@
+from datetime import datetime
+from django.core.cache import cache
+
 import json
 from typing import Dict, List
-from middleware.tasks import retrieve_asset_config
+
+from django.conf import settings
+from middleware.redis_manager import redis_manager
 from middleware.observation.utils import update_stored_observations
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes
@@ -11,7 +16,7 @@ from asgiref.sync import async_to_sync
 
 from middleware.utils import group_by
 
-from middleware.observation.types import DeviceID
+from middleware.observation.types import DeviceID, Status
 
 
 from middleware.observation.types import (
@@ -22,19 +27,17 @@ from middleware.observation.types import (
 
 from middleware.authentication import CareAuthentication
 
-active_devices: List[str] = []
-
-
-# As we dont get the blood pressure data every single time
-# in order to get continuous data we take the previous data
-# to store previous value of blood pressure per device_id
-blood_pressure_data: Dict[DeviceID, Observation] = {}
-
-
 @api_view(["GET"])
 @authentication_classes([CareAuthentication])
 def sample_authentication(request):
     return Response({"result": "Authenticated"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def device_statuses(request):
+    statuses = redis_manager.get_queue_items("monitor_statuses")
+
+    return Response(statuses, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -45,10 +48,13 @@ def update_observations(request):
     return Response({"result": "Successful"}, status=status.HTTP_200_OK)
 
 
+# As we dont get the blood pressure data every single time
+# in order to get continuous data we take the previous data
+# to store previous value of blood pressure per device_id
 def update_blood_pressure(observations: List[Observation]):
     for observation in observations:
         if observation.observation_id == ObservationID.BLOOD_PRESSURE:
-            blood_pressure_data[observation.device_id] = observation
+            cache.set(f"blood_pressure_{observation.device_id}", observation)
 
 
 def flatten_observations(observations):
@@ -75,11 +81,15 @@ def store_and_send_observations(data: List):
 
     channel_layer = get_channel_layer()
     grouped_observations = group_by(data=observation_data, key="device_id")
+    device_data: Dict[DeviceID, str] = {}
     for device_id, observation_list in grouped_observations.items():
-        last_blood_pressure_data = blood_pressure_data.get(device_id, None)
+        if observation_list[0].status == Status.DISCONNECTED:
+            device_data[device_id] = "down"
+        else:
+            device_data[device_id] = "up"
+        last_blood_pressure_data = cache.get(f"blood_pressure_{device_id}")
         if last_blood_pressure_data:
             observation_list.append(last_blood_pressure_data)
-
         async_to_sync(channel_layer.group_send)(
             f"ip_{device_id}",
             {
@@ -90,3 +100,4 @@ def store_and_send_observations(data: List):
                 ],
             },
         )
+    redis_manager.push_to_queue("monitor_statuses", device_data)

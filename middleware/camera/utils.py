@@ -1,4 +1,3 @@
-from django.conf import settings
 import logging
 import functools
 from middleware.observation.types import DeviceID

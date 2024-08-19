@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List
 from uuid import UUID
+import pytz
 import requests
 from django.conf import settings
 
@@ -86,7 +87,7 @@ def file_automated_daily_rounds(
 ):
     response = requests.post(
         f"{settings.CARE_URL}consultation/{consultation_id}/daily_rounds/",
-        data=vitals,
+        data=json.dumps(vitals),
         headers=_get_headers(claims={"asset_id": str(asset_id)}),
     )
     if response.status_code != 201:
@@ -97,3 +98,8 @@ def file_automated_daily_rounds(
         )
         return
     response.raise_for_status()
+
+def get_current_truncated_utc_z():
+    current_time = datetime.now(pytz.UTC)
+    truncated_time = current_time.replace(second=0, microsecond=0)
+    return truncated_time.strftime("%Y-%m-%dT%H:%M:00.000Z")

@@ -209,9 +209,8 @@ def get_vitals_from_observations(ip_address: str):
     logger.info("Getting vitals from observations for the asset: %s", ip_address)
 
     observation: StaticObservation = get_static_observations(device_id=ip_address)
-    if (
-        not observation
-        or (datetime.now() - observation.last_updated).total_seconds() * 1000
+    if not observation or (
+        (datetime.now() - observation.last_updated).total_seconds() * 1000
         > settings.UPDATE_INTERVAL
     ):
         return None

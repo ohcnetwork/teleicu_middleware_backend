@@ -1,8 +1,10 @@
+from typing import List
 from pydantic import ValidationError
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from middleware.redis_manager import redis_manager
 from middleware.camera.onvif_zeep_camera_controller import OnvifZeepCameraController
 from middleware.camera.types import (
     CameraAsset,
@@ -27,8 +29,8 @@ class CameraViewSet(viewsets.ViewSet):
             password=str(request.query_params["password"]),
         )
         cam = OnvifZeepCameraController(req=cam_request)
-        ressponse = cam.get_status()
-        return Response(ressponse, status=status.HTTP_200_OK)
+        response = cam.get_status()
+        return Response(response, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def presets(self, request):
@@ -76,9 +78,9 @@ class CameraViewSet(viewsets.ViewSet):
             )
 
         cam = OnvifZeepCameraController(req=cam_request)
-        response = cam.go_to_preset(preset_name=cam_request.preset_name)
+        response = cam.go_to_preset(preset_id=cam_request.preset)
         if not response:
-            response = f"Preset {cam_request.preset_name} Not Found"
+            response = f"Preset {cam_request.preset} Not Found"
             return Response(response, status=status.HTTP_404_NOT_FOUND)
         return Response(response, status=status.HTTP_200_OK)
 
@@ -150,3 +152,8 @@ class CameraViewSet(viewsets.ViewSet):
             {"status": "success", "uri": snapshot_uri},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=["get"], url_path="cameras/status")
+    def camera_statuses(self, request):
+        statuses = redis_manager.get_queue_items("camera_statuses")
+        return Response(statuses, status=status.HTTP_200_OK)

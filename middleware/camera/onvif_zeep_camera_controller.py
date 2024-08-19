@@ -56,27 +56,39 @@ class OnvifZeepCameraController(AbstractCameraController):
         return ptz_get_presets
 
     @wait_for_movement_completion
-    def go_to_preset(self, preset_name: str):
+    def go_to_preset(self, preset_id: int):
         preset_list = self.get_complete_preset()
         request = self.camera_ptz.create_type("GotoPreset")
         request.ProfileToken = self.camera_media_profile.token
-        logger.info("camera_command go_to_preset:%s ", preset_name)
-        for _, preset in enumerate(preset_list):
-            if preset_name == preset.Name:
+        logger.info("camera_command go_to_preset:%s ", preset_id)
+        for id, preset in enumerate(preset_list):
+            if preset_id == id:
                 request.PresetToken = preset.token
                 self.camera_ptz.GotoPreset(request)
-                return preset_name
-        logger.warning("Preset: %s  not found!", preset_name)
+                return preset.Name
+        logger.warning("Preset: %s  not found!", id)
         return None
 
     def get_status(self):
         request = self.camera_ptz.create_type("GetStatus")
         request.ProfileToken = self.camera_media_profile.token
         ptz_status = self.camera_ptz.GetStatus(request)
+
         pan = ptz_status.Position.PanTilt.x
         tilt = ptz_status.Position.PanTilt.y
         zoom = ptz_status.Position.Zoom.x
-        status = {"x": pan, "y": tilt, "zoom": zoom}
+        pan_tilt_status = ptz_status.MoveStatus.PanTilt
+        zoom_status = ptz_status.MoveStatus.Zoom
+        error = ptz_status.Error
+        status = {
+            "position": {
+                "x": pan,
+                "y": tilt,
+                "zoom": zoom,
+            },
+            "moveStatus": {"panTilt": pan_tilt_status, "zoom": zoom_status},
+            "error": error,
+        }
         return status
 
     @wait_for_movement_completion
