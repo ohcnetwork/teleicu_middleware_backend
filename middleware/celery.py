@@ -12,22 +12,22 @@ app.config_from_object(settings, namespace="CELERY")
 
 app.conf.enable_utc = False
 app.conf.beat_schedule = {
-    # "run-retrieve-asset-config": {
-    #     "task": "middleware.tasks.retrieve_asset_config",
-    #     "schedule": 60.0,
-    # },
+    "run-retrieve-asset-config": {
+        "task": "middleware.tasks.retrieve_asset_config",
+        "schedule": 60.0,
+    },
     "run-automated-daily-round": {
         "task": "middleware.tasks.automated_daily_rounds",
-        "schedule": 10,
+        "schedule": 60 * 60,
     },
-    # "dump-observations-to-s3": {
-    #     "task": "middleware.tasks.observations_s3_dump",
-    #     "schedule": 30.0,
-    # },
-    # "sotre-camera-statuses": {
-    #     "task": "middleware.tasks.store_camera_statuses",
-    #     "schedule": 60.0,
-    # },
+    "dump-observations-to-s3": {
+        "task": "middleware.tasks.observations_s3_dump",
+        "schedule": 30.0,
+    },
+    "sotre-camera-statuses": {
+        "task": "middleware.tasks.store_camera_statuses",
+        "schedule": 60.0,
+    },
 }
 
 
