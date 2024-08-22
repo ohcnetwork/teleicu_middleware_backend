@@ -1,10 +1,12 @@
+import asyncio
 from datetime import datetime
 from django.core.cache import cache
-
+from asgiref.sync import sync_to_async
 import json
 from typing import Dict, List
 
 from django.conf import settings
+import pytz
 from middleware.redis_manager import redis_manager
 from middleware.observation.utils import update_stored_observations
 from rest_framework import status
@@ -26,6 +28,8 @@ from middleware.observation.types import (
 )
 
 from middleware.authentication import CareAuthentication
+blood_pressure_data: Dict[DeviceID, Observation] = {}
+
 
 @api_view(["GET"])
 @authentication_classes([CareAuthentication])
@@ -35,7 +39,7 @@ def sample_authentication(request):
 
 @api_view(["GET"])
 def device_statuses(request):
-    statuses = redis_manager.get_queue_items("monitor_statuses")
+    statuses = redis_manager.get_redis_items("monitor_statuses")
 
     return Response(statuses, status=status.HTTP_200_OK)
 
@@ -54,7 +58,7 @@ def update_observations(request):
 def update_blood_pressure(observations: List[Observation]):
     for observation in observations:
         if observation.observation_id == ObservationID.BLOOD_PRESSURE:
-            cache.set(f"blood_pressure_{observation.device_id}", observation)
+            blood_pressure_data[observation.device_id] = observation
 
 
 def flatten_observations(observations):
@@ -70,12 +74,14 @@ def flatten_observations(observations):
 def store_and_send_observations(data: List):
     observation_data: List[Observation] = ObservationList.model_validate(data).root
 
-    # TODO
-    # addStatusData
-
     # store observations in redis
-    update_stored_observations(observation_data)
 
+    redis_manager.push_to_redis(
+        queue_name=settings.REDIS_OBSERVATIONS_KEY,
+        item=observation_data,
+        expiry=60 * 60,
+        curr_time=datetime.now(),
+    )
     # store last blood pressure value for devices
     update_blood_pressure(observation_data)
 
@@ -87,7 +93,7 @@ def store_and_send_observations(data: List):
             device_data[device_id] = "down"
         else:
             device_data[device_id] = "up"
-        last_blood_pressure_data = cache.get(f"blood_pressure_{device_id}")
+        last_blood_pressure_data = blood_pressure_data.get(device_id, None)
         if last_blood_pressure_data:
             observation_list.append(last_blood_pressure_data)
         async_to_sync(channel_layer.group_send)(
@@ -100,4 +106,6 @@ def store_and_send_observations(data: List):
                 ],
             },
         )
-    redis_manager.push_to_queue("monitor_statuses", device_data)
+
+    # add device statuses to redis
+    redis_manager.push_to_redis(queue_name="monitor_statuses", item=device_data)

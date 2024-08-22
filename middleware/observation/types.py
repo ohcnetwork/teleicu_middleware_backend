@@ -103,7 +103,7 @@ class DailyRoundObservation(BaseModel):
     pulse: Optional[float] = None
     temperature: Optional[float] = None
     temperature_measured_at: Optional[datetime] = None
-    bp: Optional[BloodPressureDailyRound] = None
+    bp: Optional[BloodPressureDailyRound] = {}
     taken_at: Optional[datetime] = None
     rounds_type: Optional[str] = None
     is_parsed_by_ocr: Optional[bool] = None

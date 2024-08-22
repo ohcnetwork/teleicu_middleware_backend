@@ -155,5 +155,5 @@ class CameraViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["get"], url_path="cameras/status")
     def camera_statuses(self, request):
-        statuses = redis_manager.get_queue_items("camera_statuses")
+        statuses = redis_manager.get_redis_items("camera_statuses")
         return Response(statuses, status=status.HTTP_200_OK)

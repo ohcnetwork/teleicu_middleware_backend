@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 import boto3
-
+import time
 from typing import Dict, List, Union, Optional
 from middleware.observation.types import (
     DailyRoundObservation,
@@ -209,10 +209,10 @@ def get_vitals_from_observations(ip_address: str):
     logger.info("Getting vitals from observations for the asset: %s", ip_address)
 
     observation: StaticObservation = get_static_observations(device_id=ip_address)
-    if not observation or (
-        (datetime.now() - observation.last_updated).total_seconds() * 1000
-        > settings.UPDATE_INTERVAL
-    ):
+    if (
+        datetime.now() - observation.last_updated
+    ).total_seconds() * 1000 > settings.UPDATE_INTERVAL:
+        logger.info("Returning as observations is stale for device id : %s", ip_address)
         return None
     data = observation.observations
 
@@ -232,7 +232,7 @@ def get_vitals_from_observations(ip_address: str):
         **temperature_data,
         bp=get_value_from_data(ObservationID.BLOOD_PRESSURE, data) or {},
         rounds_type="AUTOMATED",
-        is_parsed_by_ocr=False
+        is_parsed_by_ocr=False,
     )
 
 
@@ -274,9 +274,11 @@ def get_value_from_data(
             }
         return None
     elif type == "blood-pressure":
+        if observation.systolic is None or observation.diastolic is None:
+            return None
         return {
-            "systolic": observation.systolic.value if observation.systolic else None,
-            "diastolic": observation.diastolic.value if observation.diastolic else None,
+            "systolic": observation.systolic.value,
+            "diastolic": observation.diastolic.value,
         }
     else:
         return observation.value
@@ -292,19 +294,31 @@ def get_stored_observations():
 
 
 def update_stored_observations(observation_list: List[Observation]):
-    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
-    if observations is None:
-        observations = []
-    observations.extend(observation_list)
-    cache.set(settings.REDIS_OBSERVATIONS_KEY, observations)
+    # observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
+    # if observations is None:
+    # observations = []
+    # observations.extend(observation_list)
+    cache.set(settings.REDIS_OBSERVATIONS_KEY, observation_list)
+
+
+def extract_datetime(key):
+    # Split the string to get the timestamp part
+    timestamp_str = key.split("_", 1)[1]
+    # Convert the string to a datetime object
+    return datetime.fromisoformat(timestamp_str)
 
 
 def get_static_observations(device_id: DeviceID):
-    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
+    observation_keys = cache.keys(f"{settings.REDIS_OBSERVATIONS_KEY}*")
+    sorted_keys = sorted(observation_keys, key=extract_datetime)
+    observations = []
+    for key in sorted_keys:
+        observations.extend(cache.get(key))
     current_time = datetime.now()
     # last one hour data matching the device id
     valid_observations: List[Observation] = []
     if not observations:
+        logger.info(" No observations for device id : %s stored in redis ", device_id)
         return None
 
     for observation in observations:
@@ -316,6 +330,10 @@ def get_static_observations(device_id: DeviceID):
             valid_observations.append(parsed_observation)
 
     if not valid_observations:
+        logger.info(
+            " No observations Valid observations for device id : %s stored in redis ",
+            device_id,
+        )
         return None
     return generate_static_observations(observation_list=valid_observations)
 

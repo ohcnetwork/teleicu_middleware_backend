@@ -88,11 +88,17 @@ def automated_daily_rounds():
             ip_address=monitor.ip_address
         )
         logger.info("Vitals for Monitor having id:%s  is: %s", monitor.id, vitals)
-
+        if not vitals:
+            logger.info(
+                "Not filing Automated daily rounds for Monitor having id:%s  as vitals is : %s",
+                monitor.id,
+                vitals,
+            )
+            return
         file_automated_daily_rounds(
             consultation_id=consultation_id,
             asset_id=monitor.id,
-            vitals=vitals.model_dump(mode="json"),
+            vitals=vitals.model_dump(mode="json", exclude_none=True),
         )
 
 
@@ -134,4 +140,4 @@ def store_camera_statuses():
         else:
             device_data[camera.ip_address] = "down"
 
-    redis_manager.push_to_queue("camera_statuses", device_data)
+    redis_manager.push_to_redis("camera_statuses", device_data)

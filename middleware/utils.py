@@ -82,22 +82,27 @@ def get_patient_id(external_id: UUID):
     )
 
 
-def file_automated_daily_rounds(
-    consultation_id: UUID, asset_id: UUID, vitals: DailyRoundObservation
-):
+def file_automated_daily_rounds(consultation_id: UUID, asset_id: UUID, vitals: dict):
     response = requests.post(
         f"{settings.CARE_URL}consultation/{consultation_id}/daily_rounds/",
-        data=json.dumps(vitals),
+        json=vitals,
         headers=_get_headers(claims={"asset_id": str(asset_id)}),
     )
+    print(response.json())
     if response.status_code != 201:
         logger.error(
-            "Failed to file the daily round for the consultation: $%s and asset:%s",
+            "Failed to file the daily round for the consultation: %s and asset:%s",
             consultation_id,
             asset_id,
         )
         return
     response.raise_for_status()
+    logger.info(
+        "Successfully filed automated daily rounds for Monitor having id:%s  as vitals is : %s",
+        asset_id,
+        vitals,
+    )
+
 
 def get_current_truncated_utc_z():
     current_time = datetime.now(pytz.UTC)
