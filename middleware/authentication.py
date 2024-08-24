@@ -140,7 +140,6 @@ class TokenAuthMiddleware(BaseMiddleware):
         except DenyConnection:
             logger.info("Denying Connection due to token not valid or provided")
             await self.close_connection(send)
-            # await self.close(code=4001)
 
     async def close_connection(self, send):
         # Send close frame

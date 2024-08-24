@@ -18,8 +18,6 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    # volumes:
-    #   - redis-data:/data
       
   # rtsptoweb:
   roverr_rtsp_stream:
@@ -27,7 +25,8 @@ services:
     image: ghcr.io/deepch/rtsptoweb:latest
     container_name: roverr_rtsp_stream
     volumes:
-      - /home/teleicu/app/teleicu_middleware_backend/RtspConfig.json:/config/config.json
+      - ./RtspConfig.json:/config/config.json
+
     ports:
       - "8080:8080"
 
@@ -87,64 +86,6 @@ services:
       - redis
       - db
       - teleicu_middleware
-  
-  # celery-worker:
-  #   build:
-  #     dockerfile: dev.Dockerfile
-  #   container_name: celery_worker
-  #   command: celery -A your_project_name worker --loglevel=info
-  #   volumes:
-  #     - .:/app
-  #   working_dir: /app
-  #   depends_on:
-  #     - db
-  #     - redis
-  #     - celery-beat
-  #   env_file:
-  #     - ./.env
-
-  # celery-beat:
-  #   build:
-  #     dockerfile: dev.Dockerfile
-  #   container_name: celery_beat
-  #   command: celery -A your_project_name beat --loglevel=info
-  #   volumes:
-  #     - .:/app
-  #   working_dir: /app
-  #   depends_on:
-  #     - db
-  #     - redis
-  #   env_file:
-  #     - ./.env
-
-  # mock_cns_req:
-  #   restart: always
-  #   image: ghcr.io/coronasafe/mock-cns-req:latest
-  #   container_name: mock_cns_req
-  #   ports:
-  #     - "8002:8002"
-  #   logging:
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "3"
-
-  
-
-  #watchtower
-  # watchtower:
-  #   restart: always
-  #   image: containrrr/watchtower
-  #   container_name: watchtower
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   environment:
-  #     - WATCHTOWER_CLEANUP=true
-  #     - WATCHTOWER_DEBUG=true
-  #     - WATCHTOWER_SCHEDULE=0 * * * * *
-  #   ports:
-  #    - "8070:8080"
-
 
 volumes:
   postgres-data:
-  # redis-data:

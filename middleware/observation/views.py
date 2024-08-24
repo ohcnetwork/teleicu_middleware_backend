@@ -40,7 +40,7 @@ def sample_authentication(request):
 @api_view(["GET"])
 @authentication_classes([CareAuthentication])
 def device_statuses(request):
-    statuses = redis_manager.get_redis_items("monitor_statuses")
+    statuses = redis_manager.get_redis_items(settings.MONITOR_STATUS_KEY)
 
     return Response(statuses, status=status.HTTP_200_OK)
 
@@ -76,13 +76,13 @@ def store_and_send_observations(data: List):
     observation_data: List[Observation] = ObservationList.model_validate(data).root
 
     # store observations in redis
-
     redis_manager.push_to_redis(
         queue_name=settings.REDIS_OBSERVATIONS_KEY,
         item=observation_data,
         expiry=60 * 60 * 2,
         curr_time=datetime.now(),
     )
+
     # store last blood pressure value for devices
     update_blood_pressure(observation_data)
 
@@ -109,4 +109,6 @@ def store_and_send_observations(data: List):
         )
 
     # add device statuses to redis
-    redis_manager.push_to_redis(queue_name="monitor_statuses", item=device_data)
+    redis_manager.push_to_redis(
+        queue_name=settings.MONITOR_STATUS_KEY, item=device_data
+    )

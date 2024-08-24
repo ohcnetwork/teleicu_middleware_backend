@@ -19,8 +19,9 @@ from rest_framework.routers import SimpleRouter
 from django.contrib import admin
 from django.urls import path,include
 
-from .open_id import PublicJWKsView
-from . import views
+from middleware.open_id import PublicJWKsView
+from middleware import views
+from middleware import consumers
 from middleware.views import MiddlewareHealthViewSet, home
 
 router = SimpleRouter(trailing_slash=False)
@@ -37,4 +38,13 @@ urlpatterns = [
     path("", include("middleware.stream.urls")),
     path("send_mock_updates/", views.get_mock_request_list),
     path("verify_token/", views.verify_token),
+]
+
+
+websocket_urlpatterns = [
+    path(r"logger", consumers.LoggerConsumer.as_asgi()),
+    path(
+        r"observations/<str:ip_address>",
+        consumers.observations.as_asgi(),
+    ),
 ]

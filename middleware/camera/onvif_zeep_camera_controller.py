@@ -2,37 +2,32 @@ import logging
 from django.conf import settings
 from onvif import ONVIFCamera, ONVIFError
 from middleware.camera.abstract_camera import AbstractCameraController
-from middleware.camera.exceptions import InvalidCameraCrendentialsException
+from middleware.camera.exceptions import InvalidCameraCredentialsException
 from middleware.camera.types import CameraAsset
 from middleware.camera.utils import wait_for_movement_completion
 
 logger = logging.getLogger(__name__)
 
-
-# my_cam=ONVIFCamera("192.168.68.116", 80, "remote_user","2jCkrCRSeahzKEU", "/home/teleicu/.local/share/virtualenvs/teleicu_middleware_backend-pwPF-mjP/lib/python3.12/site-packages/wsdl/")
 class OnvifZeepCameraController(AbstractCameraController):
 
     def __init__(self, req: CameraAsset) -> None:
         try:
-            # cam = ONVIFCamera(
-            #     req.hostname, req.port, req.username, req.password, settings.WSDL_PATH
-            # )
             cam = ONVIFCamera(req.hostname, req.port, req.username, req.password)
         except ONVIFError as err:
-            logger.info(
+            logger.debug(
                 "Exception raised while connecting to Camera with req: %s and reason: %s",
                 req,
                 err.reason,
             )
 
-            raise InvalidCameraCrendentialsException
+            raise InvalidCameraCredentialsException
 
         media = cam.create_media_service()
 
-        logger.info("Create ptz service object")
+        logger.debug("Create ptz service object")
         ptz = cam.create_ptz_service()
 
-        logger.info("Get profiles")
+        logger.debug("Get profiles")
         media_profile = media.GetProfiles()[0]
 
         self.cam = cam
@@ -42,7 +37,7 @@ class OnvifZeepCameraController(AbstractCameraController):
 
     def get_presets(self):
         ptz_get_presets = self.get_complete_preset()
-        logger.info("camera_command( get_preset() )")
+        logger.debug("camera_command( get_preset() )")
 
         presets = {}
         for i, preset in enumerate(ptz_get_presets):
@@ -60,7 +55,7 @@ class OnvifZeepCameraController(AbstractCameraController):
         preset_list = self.get_complete_preset()
         request = self.camera_ptz.create_type("GotoPreset")
         request.ProfileToken = self.camera_media_profile.token
-        logger.info("camera_command go_to_preset:%s ", preset_id)
+        logger.debug("camera_command go_to_preset:%s ", preset_id)
         for id, preset in enumerate(preset_list):
             if preset_id == id:
                 request.PresetToken = preset.token
@@ -97,7 +92,7 @@ class OnvifZeepCameraController(AbstractCameraController):
         request.ProfileToken = self.camera_media_profile.token
         request.Position = {"PanTilt": {"x": pan, "y": tilt}, "Zoom": zoom}
         resp = self.camera_ptz.AbsoluteMove(request)
-        logger.info("camera_command( aboslute_move(%f, %f, %f) )", pan, tilt, zoom)
+        logger.debug("camera_command( aboslute_move(%f, %f, %f) )", pan, tilt, zoom)
         return resp
 
     @wait_for_movement_completion
@@ -106,7 +101,7 @@ class OnvifZeepCameraController(AbstractCameraController):
         request.ProfileToken = self.camera_media_profile.token
         request.Translation = {"PanTilt": {"x": pan, "y": tilt}, "Zoom": zoom}
         resp = self.camera_ptz.RelativeMove(request)
-        logger.info("camera_command( relative_move(%f, %f, %f) )", pan, tilt, zoom)
+        logger.debug("camera_command( relative_move(%f, %f, %f) )", pan, tilt, zoom)
         return resp
 
     def set_preset(self, preset_name: str):
@@ -114,7 +109,7 @@ class OnvifZeepCameraController(AbstractCameraController):
         request = self.camera_ptz.create_type("SetPreset")
         request.ProfileToken = self.camera_media_profile.token
         request.PresetName = preset_name
-        logger.info("camera_command( set_preset%s) )", preset_name)
+        logger.debug("camera_command( set_preset%s) )", preset_name)
 
         for _, preset in enumerate(presets):
             if str(preset.Name) == preset_name:
@@ -124,7 +119,7 @@ class OnvifZeepCameraController(AbstractCameraController):
                 return None
 
         ptz_set_preset = self.camera_ptz.SetPreset(request)
-        logger.info("Preset ('%s') created!", preset_name)
+        logger.debug("Preset ('%s') created!", preset_name)
         return ptz_set_preset
 
     def get_snapshot_uri(self):
@@ -132,13 +127,3 @@ class OnvifZeepCameraController(AbstractCameraController):
         request.ProfileToken = self.camera_media_profile.token
         response = self.camera_media.GetSnapshotUri(request)
         return response.Uri
-
-
-""" 
-from middleware.camera.onvif_zeep_camera_controller import OnvifZeepCameraController
-from middleware.camera.types import CameraAsset
-from django.conf import settings
-
-
-obj=OnvifZeepCameraController(req=CameraAsset(hostname=settings.HOSTNAME,password=settings.PASSWORD,port=settings.PORT,username=settings.ONVIF_USERNAME))
-  """

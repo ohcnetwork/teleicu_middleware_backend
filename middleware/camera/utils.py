@@ -1,5 +1,8 @@
 import logging
 import functools
+
+from django.conf import settings
+
 from middleware.observation.types import DeviceID
 from time import sleep
 from django.core.cache import cache
@@ -30,15 +33,13 @@ def wait_for_movement_completion(func):
 
 
 def lock_camera(ip: DeviceID):
-    cache.set(f"camera_id_{ip}", "LOCKED", 120)
+    cache.set(f"{settings.CAMERA_LOCK_KEY}{ip}", True, settings.CAMERA_LOCK_TIMEOUT)
 
 
 def unlock_camera(ip: DeviceID):
-    cache.delete(f"camera_id_{ip}")
+    cache.delete(f"{settings.CAMERA_LOCK_KEY}{ip}")
 
 
 def is_camera_locked(ip: DeviceID):
-    status = cache.get(f"camera_id_{ip}")
-    if status and status == "LOCKED":
-        return True
-    return False
+    status = cache.get(f"{settings.CAMERA_LOCK_KEY}{ip}")
+    return status

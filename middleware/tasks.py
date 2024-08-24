@@ -140,4 +140,4 @@ def store_camera_statuses():
         else:
             device_data[camera.ip_address] = "down"
 
-    redis_manager.push_to_redis("camera_statuses", device_data)
+    redis_manager.push_to_redis(settings.CAMERA_STATUS_KEY, device_data)

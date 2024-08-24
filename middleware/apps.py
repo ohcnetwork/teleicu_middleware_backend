@@ -8,9 +8,4 @@ class MiddlewareConfig(AppConfig):
     verbose_name = "Middleware"
 
     def ready(self):
-        from middleware.tasks import retrieve_asset_config, store_camera_statuses
-
-        # countdown to get the middleware running for authentication
         cache.clear()
-        retrieve_asset_config.apply_async(countdown=2)
-        store_camera_statuses.apply_async()

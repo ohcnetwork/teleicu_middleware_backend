@@ -1,9 +1,11 @@
 from typing import List
+from django.conf import settings
 from pydantic import ValidationError
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from middleware.camera.exceptions import InvalidCameraCredentialsException
 from middleware.redis_manager import redis_manager
 from middleware.camera.onvif_zeep_camera_controller import OnvifZeepCameraController
 from middleware.camera.types import (
@@ -36,18 +38,24 @@ class CameraViewSet(viewsets.ViewSet):
     def presets(self, request):
         try:
             cam_request = CameraAsset(
-                hostname=str(request.query_params["hostname"]),
-                port=int(request.query_params["port"]),
-                username=str(request.query_params["username"]),
-                password=str(request.query_params["password"]),
+                hostname=str(request.GET.get("hostname")),
+                port=int(request.GET.get("port")),
+                username=str(request.GET.get("username")),
+                password=str(request.GET.get("password")),
             )
             cam = OnvifZeepCameraController(req=cam_request)
             presets = cam.get_presets()
             return Response(presets, status=status.HTTP_200_OK)
+        except ValidationError as exc:
+            return Response(
+                {"message": exc.errors()}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        except Exception as exc:
+        except InvalidCameraCredentialsException as exc:
             logger.error("An exception occurred while getting presets: %s", exc)
-            return Response(exc.errors(), status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["post"], url_name="presets")
     def set_preset(self, request):
@@ -56,10 +64,15 @@ class CameraViewSet(viewsets.ViewSet):
             cam = OnvifZeepCameraController(req=cam_request)
             result = cam.set_preset(preset_name=cam_request.preset_name)
             return Response(result, status=status.HTTP_200_OK)
-
-        except Exception as exc:
+        except ValidationError as exc:
+            return Response(
+                {"message": exc.errors()}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except InvalidCameraCredentialsException as exc:
             logger.error("An exception occurred while getting presets: %s", exc)
-            return Response(exc.errors(), status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["post"], url_path="gotoPreset")
     def go_to_preset(self, request):
@@ -76,14 +89,18 @@ class CameraViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_423_LOCKED,
             )
-
-        cam = OnvifZeepCameraController(req=cam_request)
-        response = cam.go_to_preset(preset_id=cam_request.preset)
-        if not response:
-            response = f"Preset {cam_request.preset} Not Found"
-            return Response(response, status=status.HTTP_404_NOT_FOUND)
-        return Response(response, status=status.HTTP_200_OK)
-
+        try:
+            cam = OnvifZeepCameraController(req=cam_request)
+            response = cam.go_to_preset(preset_id=cam_request.preset)
+            if not response:
+                response = f"Preset {cam_request.preset} Not Found"
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+            return Response(response, status=status.HTTP_200_OK)
+        except InvalidCameraCredentialsException as exc:
+            logger.error("An exception occurred while getting presets: %s", exc)
+            return Response(
+                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+            )
     @action(detail=False, methods=["post"], url_path="absoluteMove")
     def absolute_move(self, request):
         try:
@@ -99,13 +116,20 @@ class CameraViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_423_LOCKED,
             )
-
-        cam = OnvifZeepCameraController(req=cam_request)
-        cam.absolute_move(pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom)
-        return Response(
-            {"status": "success", "message": "Camera position updated!"},
-            status=status.HTTP_200_OK,
-        )
+        try:
+            cam = OnvifZeepCameraController(req=cam_request)
+            cam.absolute_move(
+                pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom
+            )
+            return Response(
+                {"status": "success", "message": "Camera position updated!"},
+                status=status.HTTP_200_OK,
+            )
+        except InvalidCameraCredentialsException as exc:
+            logger.error("An exception occurred while getting presets: %s", exc)
+            return Response(
+                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["post"], url_path="relativeMove")
     def relative_move(self, request):
@@ -122,13 +146,20 @@ class CameraViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_423_LOCKED,
             )
-
-        cam = OnvifZeepCameraController(req=cam_request)
-        cam.relative_move(pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom)
-        return Response(
-            {"status": "success", "message": "Camera position updated!"},
-            status=status.HTTP_200_OK,
-        )
+        try:
+            cam = OnvifZeepCameraController(req=cam_request)
+            cam.relative_move(
+                pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom
+            )
+            return Response(
+                {"status": "success", "message": "Camera position updated!"},
+                status=status.HTTP_200_OK,
+            )
+        except InvalidCameraCredentialsException as exc:
+            logger.error("An exception occurred while getting presets: %s", exc)
+            return Response(
+                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["post"], url_path="snapshotAtLocation")
     def snapshot_at_location(self, request):
@@ -145,15 +176,23 @@ class CameraViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_423_LOCKED,
             )
-        cam = OnvifZeepCameraController(req=cam_request)
-        cam.relative_move(pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom)
-        snapshot_uri = cam.get_snapshot_uri()
-        return Response(
-            {"status": "success", "uri": snapshot_uri},
-            status=status.HTTP_200_OK,
-        )
+        try:
+            cam = OnvifZeepCameraController(req=cam_request)
+            cam.relative_move(
+                pan=cam_request.x, tilt=cam_request.y, zoom=cam_request.zoom
+            )
+            snapshot_uri = cam.get_snapshot_uri()
+            return Response(
+                {"status": "success", "uri": snapshot_uri},
+                status=status.HTTP_200_OK,
+            )
+        except InvalidCameraCredentialsException as exc:
+            logger.error("An exception occurred while getting presets: %s", exc)
+            return Response(
+                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["get"], url_path="cameras/status")
     def camera_statuses(self, request):
-        statuses = redis_manager.get_redis_items("camera_statuses")
+        statuses = redis_manager.get_redis_items(settings.CAMERA_STATUS_KEY)
         return Response(statuses, status=status.HTTP_200_OK)
