@@ -34,6 +34,7 @@ urlpatterns = [
     path(".well-known/openid-configuration/", PublicJWKsView.as_view()),
     path("", include("middleware.observation.urls")),
     path("", include("middleware.camera.urls")),
+    path("", include("middleware.stream.urls")),
     path("send_mock_updates/", views.get_mock_request_list),
     path("verify_token/", views.verify_token),
 ]

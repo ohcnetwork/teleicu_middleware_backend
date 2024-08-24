@@ -38,6 +38,7 @@ def sample_authentication(request):
 
 
 @api_view(["GET"])
+@authentication_classes([CareAuthentication])
 def device_statuses(request):
     statuses = redis_manager.get_redis_items("monitor_statuses")
 
