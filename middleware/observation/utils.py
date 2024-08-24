@@ -1,7 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import boto3
 import time
+
+from django.utils.timezone import now, make_aware
 from typing import Dict, List, Union, Optional
 from middleware.observation.types import (
     DailyRoundObservation,
@@ -191,6 +193,10 @@ def is_valid(observation: Observation):
             and not isinstance(observation.value, (int, float))
         )
     ):
+        logger.info(
+            "Observations are not valid for %s Returning False",
+            observation.observation_id,
+        )
         return False
 
     if observation.status == Status.FINAL:
@@ -208,12 +214,14 @@ def get_vitals_from_observations(ip_address: str):
 
     logger.info("Getting vitals from observations for the asset: %s", ip_address)
 
-    observation: StaticObservation = get_static_observations(device_id=ip_address)
-    if (
-        datetime.now() - observation.last_updated
-    ).total_seconds() * 1000 > settings.UPDATE_INTERVAL:
-        logger.info("Returning as observations is stale for device id : %s", ip_address)
+    observation = get_static_observations(device_id=ip_address)
+
+    if not observation:
+        logger.info(
+            "Returning as observations is stale or empty for device id : %s", ip_address
+        )
         return None
+
     data = observation.observations
 
     temperature_data = get_value_from_data(
@@ -253,14 +261,14 @@ def get_value_from_data(
     if not observation.date_time:
         return None
 
-    ist_timezone = pytz.timezone("Asia/Kolkata")
-    converted_date_time = observation.date_time.astimezone(ist_timezone)
+    converted_date_time = make_aware(observation.date_time)
 
-    is_stale = (
-        pytz.utc.localize(datetime.now()).astimezone(ist_timezone) - converted_date_time
-    ).total_seconds() * 1000 > settings.UPDATE_INTERVAL
+    is_stale = converted_date_time < (
+        now() - timedelta(minutes=settings.UPDATE_INTERVAL)
+    )
 
     if is_stale or not is_valid(observation):
+        logger.info("Observations are stale or invalid Returning None")
         return None
 
     if type in [
@@ -310,22 +318,25 @@ def extract_datetime(key):
 
 def get_static_observations(device_id: DeviceID):
     observation_keys = cache.keys(f"{settings.REDIS_OBSERVATIONS_KEY}*")
+
     sorted_keys = sorted(observation_keys, key=extract_datetime)
+    logger.info("first key is %s", sorted_keys[0])
+    logger.info("last key is %s", sorted_keys[-1])
     observations = []
     for key in sorted_keys:
         observations.extend(cache.get(key))
-    current_time = datetime.now()
+    stale_time = now() - timedelta(minutes=settings.UPDATE_INTERVAL)
+
     # last one hour data matching the device id
     valid_observations: List[Observation] = []
     if not observations:
         logger.info(" No observations for device id : %s stored in redis ", device_id)
         return None
-
     for observation in observations:
         parsed_observation = Observation.model_validate(observation)
+
         if (
-            (current_time - parsed_observation.taken_at).total_seconds() * 1000
-            < settings.UPDATE_INTERVAL
+            parsed_observation.taken_at > stale_time
         ) and parsed_observation.device_id == device_id:
             valid_observations.append(parsed_observation)
 

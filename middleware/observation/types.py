@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.utils.timezone import now
 from enum import Enum
 from typing import Dict, List, NewType, Optional
 from pydantic import BaseModel, Field, RootModel, field_serializer
@@ -54,6 +55,10 @@ class BloodPressure(BaseModel):
     high_limit: Optional[float] = Field(default=None, alias="high-limit")
 
 
+def get_current_time():
+    return now()
+
+
 class Observation(BaseModel):
     observation_id: ObservationID
     device_id: str
@@ -76,7 +81,7 @@ class Observation(BaseModel):
     data_low_limit: Optional[float] = Field(default=None, alias="data-low-limit")
     data_high_limit: Optional[float] = Field(default=None, alias="data-high-limit")
     data: Optional[str] = None
-    taken_at: datetime = Field(exclude=True, default=datetime.now())
+    taken_at: datetime = Field(exclude=True, default_factory=get_current_time)
 
     @field_serializer("date_time")
     def serialize_dt(self, dt: datetime, _info):

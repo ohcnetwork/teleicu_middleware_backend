@@ -79,7 +79,7 @@ def store_and_send_observations(data: List):
     redis_manager.push_to_redis(
         queue_name=settings.REDIS_OBSERVATIONS_KEY,
         item=observation_data,
-        expiry=60 * 60,
+        expiry=60 * 60 * 2,
         curr_time=datetime.now(),
     )
     # store last blood pressure value for devices

@@ -88,7 +88,7 @@ def file_automated_daily_rounds(consultation_id: UUID, asset_id: UUID, vitals: d
         json=vitals,
         headers=_get_headers(claims={"asset_id": str(asset_id)}),
     )
-    print(response.json())
+
     if response.status_code != 201:
         logger.error(
             "Failed to file the daily round for the consultation: %s and asset:%s",
