@@ -1,4 +1,3 @@
-from typing import List
 from django.conf import settings
 from pydantic import ValidationError
 from rest_framework import viewsets, status
@@ -21,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class CameraViewSet(viewsets.ViewSet):
-
     @action(detail=False, methods=["get"])
     def status(self, request):
         cam_request = CameraAsset(
@@ -101,6 +99,7 @@ class CameraViewSet(viewsets.ViewSet):
             return Response(
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
+
     @action(detail=False, methods=["post"], url_path="absoluteMove")
     def absolute_move(self, request):
         try:

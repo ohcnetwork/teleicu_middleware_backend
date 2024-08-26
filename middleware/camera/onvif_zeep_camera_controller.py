@@ -1,5 +1,4 @@
 import logging
-from django.conf import settings
 from onvif import ONVIFCamera, ONVIFError
 from middleware.camera.abstract_camera import AbstractCameraController
 from middleware.camera.exceptions import InvalidCameraCredentialsException
@@ -8,8 +7,8 @@ from middleware.camera.utils import wait_for_movement_completion
 
 logger = logging.getLogger(__name__)
 
-class OnvifZeepCameraController(AbstractCameraController):
 
+class OnvifZeepCameraController(AbstractCameraController):
     def __init__(self, req: CameraAsset) -> None:
         try:
             cam = ONVIFCamera(req.hostname, req.port, req.username, req.password)

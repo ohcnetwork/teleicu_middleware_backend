@@ -4,18 +4,15 @@ import logging
 from channels.exceptions import DenyConnection
 from django.core.cache import cache
 import requests
-from rest_framework import status
 from channels.auth import AuthMiddlewareStack
 
 from channels.middleware import BaseMiddleware
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import jwt
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken
-from django.core.exceptions import ValidationError
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import Token
-from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +118,6 @@ class CareAuthentication(JWTAuthentication):
 
 
 class TokenAuthMiddleware(BaseMiddleware):
-
     def __init__(self, inner):
         self.inner = inner
 

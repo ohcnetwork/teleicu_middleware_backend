@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-import os
 from authlib.jose import JsonWebKey
 import base64
 
@@ -200,11 +199,11 @@ UPDATE_INTERVAL = env.int("UPDATE_INTERVAL", default=60)
 
 
 # Cameras
-WSDL_PATH=env("WSDL_PATH")
-HOSTNAME=env("HOSTNAME")
-ONVIF_USERNAME=env("ONVIF_USERNAME")
-PASSWORD=env("PASSWORD")
-PORT=env("PORT")
+WSDL_PATH = env("WSDL_PATH")
+HOSTNAME = env("HOSTNAME")
+ONVIF_USERNAME = env("ONVIF_USERNAME")
+PASSWORD = env("PASSWORD")
+PORT = env("PORT")
 
 CAMERA_LOCK_KEY = env("CAMERA_LOCK_KEY")
 CAMERA_LOCK_TIMEOUT = env("CAMERA_LOCK_TIMEOUT")

@@ -2,7 +2,7 @@ from datetime import datetime
 from django.conf import settings
 from django.shortcuts import render
 import requests
-from rest_framework.decorators import api_view, authentication_classes
+from rest_framework.decorators import api_view
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,7 +18,6 @@ from middleware.utils import _get_headers, generate_jwt
 
 
 class MiddlewareHealthViewSet(viewsets.ViewSet):
-
     @action(detail=False, methods=["get"])
     def ping(self, request):
         return Response({"pong": datetime.now()}, status=status.HTTP_200_OK)

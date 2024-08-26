@@ -1,21 +1,16 @@
 from unittest import TestCase as UnitTest
-from django.urls import reverse
-from django.http import HttpRequest
 from middleware.observation.test.util_factory import ObservationFactory
 from middleware.observation.types import ObservationID
-from django.test import RequestFactory
 from middleware.observation.views import (
     flatten_observations,
     store_and_send_observations,
     update_blood_pressure,
     blood_pressure_data,
-    update_observations,
 )
 from unittest.mock import call, patch, MagicMock
 
 
 class TestObservation(UnitTest):
-
     def test_update_blood_pressure(self):
         observation_1 = ObservationFactory(observation_id=ObservationID.BLOOD_PRESSURE)
         observation_2 = ObservationFactory(

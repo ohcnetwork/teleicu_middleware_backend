@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import logging
 import boto3
-import time
 
 from django.utils.timezone import now, make_aware
 from typing import Dict, List, Union, Optional
@@ -15,9 +14,7 @@ from middleware.observation.types import (
 )
 from sentry_sdk.crons import capture_checkin
 from sentry_sdk.crons.consts import MonitorStatus
-import json
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-import pytz
 from django.core.cache import cache
 from django.conf import settings
 from middleware.observation.types import DeviceID, StaticObservation
@@ -211,7 +208,6 @@ def is_valid(observation: Observation):
 
 
 def get_vitals_from_observations(ip_address: str):
-
     logger.info("Getting vitals from observations for the asset: %s", ip_address)
 
     observation = get_static_observations(device_id=ip_address)

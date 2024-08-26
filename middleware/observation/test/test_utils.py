@@ -1,17 +1,14 @@
 from unittest import TestCase as UnitTest
-from django.test import override_settings
-import boto3
 from unittest.mock import MagicMock, patch
 
 from sentry_sdk.crons.consts import MonitorStatus
 
 from middleware.observation.test.util_factory import ObservationFactory
-from middleware.observation.types import DataDumpRequest, MonitorOptions, Observation
+from middleware.observation.types import DataDumpRequest, MonitorOptions
 from middleware.observation.utils import make_data_dump_to_json
 
 
 class TestUtils(UnitTest):
-
     @patch("middleware.observation.utils.boto3.client")
     @patch("middleware.observation.utils.capture_checkin")
     @patch("middleware.observation.utils.settings")

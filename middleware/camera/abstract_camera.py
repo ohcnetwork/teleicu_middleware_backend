@@ -4,7 +4,6 @@ from middleware.camera.types import CameraAsset
 
 
 class AbstractCameraController(ABC):
-
     @abstractmethod
     def go_to_preset(self, preset_id: str):
         pass

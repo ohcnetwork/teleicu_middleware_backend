@@ -1,12 +1,11 @@
 from unittest.mock import MagicMock, patch
 from unittest import TestCase as UnitTest
-from middleware.camera.exceptions import InvalidCameraCrendentialsException
+from middleware.camera.exceptions import InvalidCameraCredentialsException
 from middleware.camera.onvif_zeep_camera_controller import OnvifZeepCameraController
 from middleware.camera.types import CameraAsset
 
 
 class TestOnvifZeepCameraController(UnitTest):
-
     @patch("middleware.camera.onvif_zeep_camera_controller.ONVIFCamera")
     def setUp(self, mocked_onvif_camera):
         # Mock the ONVIFCamera and its services
@@ -95,7 +94,6 @@ class TestOnvifZeepCameraController(UnitTest):
 
 
 class CameraExceptions(UnitTest):
-
     def setUp(self):
         self.req = CameraAsset(
             hostname="112.334.23.12",
@@ -105,8 +103,7 @@ class CameraExceptions(UnitTest):
         )
 
     def test_raise_exception_when_conn_error(self):
-
         with self.assertRaisesRegex(
-            InvalidCameraCrendentialsException, "Invalid Credentials"
+            InvalidCameraCredentialsException, "Invalid Credentials"
         ):
             OnvifZeepCameraController(self.req)

@@ -1,6 +1,5 @@
 import factory
 
-from factory import LazyFunction, Faker, SubFactory
 from datetime import datetime
 
 
@@ -26,7 +25,6 @@ class BloodPressureFactory(factory.Factory):
 
 
 class ObservationFactory(factory.Factory):
-
     class Meta:
         model = Observation
 

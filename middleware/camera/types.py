@@ -9,12 +9,14 @@ class CameraAsset(BaseModel):
     username: str
     password: str
     port: int
-    useSecure: Optional[bool]=None
+    useSecure: Optional[bool] = None
+
 
 class CameraAssetPresetRequest(CameraAsset):
     preset: int = Field(
         default=None, validation_alias=AliasChoices("preset", "presetName")
     )
+
 
 class CameraAssetMoveRequest(CameraAsset):
     x: float

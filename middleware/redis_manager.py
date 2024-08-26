@@ -1,12 +1,9 @@
 from datetime import datetime
-from django.conf import settings
 from django.core.cache import cache
-from django_redis import get_redis_connection
 from middleware.utils import get_current_truncated_utc_z
 
 
 class RedisManager:
-
     def push_to_redis(self, queue_name, item, expiry=60 * 30, curr_time=None):
         """
         Push an item to a Redis.

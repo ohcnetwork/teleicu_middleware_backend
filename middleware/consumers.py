@@ -1,14 +1,13 @@
 import json
 import time
-from typing import Optional
-from urllib.parse import parse_qs
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer
 from channels.consumer import AsyncConsumer
 import json
 import asyncio
 import psutil
 from channels.exceptions import StopConsumer
+
 
 class observations(WebsocketConsumer):
     def connect(self):
@@ -41,7 +40,6 @@ class observations(WebsocketConsumer):
 
 
 class LoggerConsumer(AsyncConsumer):
-
     async def websocket_connect(self, event):
         self.connected = True
 

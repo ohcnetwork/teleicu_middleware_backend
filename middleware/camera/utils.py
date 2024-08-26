@@ -9,15 +9,14 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
+
 def wait_for_movement_completion(func):
     @functools.wraps(func)
     def wrapper_wait_for_movement_completion(self, *args, **kwargs):
-
-        response=func(self, *args, **kwargs)
+        response = func(self, *args, **kwargs)
 
         # Poll the status of the camera's movement
         while True:
-
             status = self.camera_ptz.GetStatus(
                 {"ProfileToken": self.camera_media_profile.token}
             )
@@ -29,6 +28,7 @@ def wait_for_movement_completion(func):
             # Sleep for a short period before checking the status again
             sleep(0.5)
         return response
+
     return wrapper_wait_for_movement_completion
 
 

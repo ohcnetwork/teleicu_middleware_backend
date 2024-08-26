@@ -16,8 +16,6 @@ from middleware.observation.types import (
 )
 from middleware.redis_manager import redis_manager
 
-from django.db.models import CharField
-from django.db.models.functions import Cast
 from middleware.observation.utils import get_vitals_from_observations
 from middleware.utils import (
     _get_headers,
@@ -33,6 +31,7 @@ from middleware.observation.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 @shared_task
 def retrieve_asset_config():

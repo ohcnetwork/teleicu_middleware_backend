@@ -1,14 +1,8 @@
-import asyncio
 from datetime import datetime
-from django.core.cache import cache
-from asgiref.sync import sync_to_async
-import json
 from typing import Dict, List
 
 from django.conf import settings
-import pytz
 from middleware.redis_manager import redis_manager
-from middleware.observation.utils import update_stored_observations
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes
 from rest_framework.response import Response
@@ -28,6 +22,7 @@ from middleware.observation.types import (
 )
 
 from middleware.authentication import CareAuthentication
+
 blood_pressure_data: Dict[DeviceID, Observation] = {}
 
 

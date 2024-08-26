@@ -17,7 +17,6 @@ from authlib.jose import JsonWebKey
 from typing import List, Dict, TypeVar, Any
 from pydantic import BaseModel
 
-from middleware.observation.types import DailyRoundObservation
 
 T = TypeVar("T", bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -67,7 +66,6 @@ def group_by(data: List[T], key: str) -> Dict[Any, List[T]]:
 
 
 def get_patient_id(external_id: UUID):
-
     response = requests.get(
         f"{settings.CARE_URL}consultation/patient_from_asset/?preset_name=monitor",
         headers=_get_headers(claims={"asset_id": str(external_id)}),
