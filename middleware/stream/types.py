@@ -19,3 +19,7 @@ class VerifyStreamTokenRequest(BaseModel):
     token: str
     ip: str
     stream: str
+
+
+class StreamResponse(BaseModel):
+    message: str

@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Dict, List
-
 from django.conf import settings
 from middleware.redis_manager import redis_manager
 from rest_framework import status
@@ -8,8 +7,9 @@ from rest_framework.decorators import api_view, authentication_classes
 from rest_framework.response import Response
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from drf_spectacular.utils import extend_schema
 
-
+from middleware.types import StatusResponse
 from middleware.utils import group_by
 
 from middleware.observation.types import DeviceID, Status
@@ -26,12 +26,10 @@ from middleware.authentication import CareAuthentication
 blood_pressure_data: Dict[DeviceID, Observation] = {}
 
 
-@api_view(["GET"])
-@authentication_classes([CareAuthentication])
-def sample_authentication(request):
-    return Response({"result": "Authenticated"}, status=status.HTTP_200_OK)
-
-
+@extend_schema(
+    responses={200: StatusResponse},
+    description="Get statuses for Monitor devices",
+)
 @api_view(["GET"])
 @authentication_classes([CareAuthentication])
 def device_statuses(request):
@@ -40,6 +38,11 @@ def device_statuses(request):
     return Response(statuses, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request=ObservationList,
+    responses={200: {}},
+    description="Endpoint used by Cns to pass vitals fetched from devices",
+)
 @api_view(["POST"])
 def update_observations(request):
     data = flatten_observations(request.data)

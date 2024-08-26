@@ -3,25 +3,48 @@ from django.conf import settings
 from django.shortcuts import render
 import requests
 from rest_framework.decorators import api_view
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from django.db import connection
 from django.db.utils import OperationalError
 from middleware.models import Asset
+from middleware.types import (
+    HealthCheckResponse,
+    PingResponse,
+    VerifyTokenRequest,
+    VerifyTokenResponse,
+)
 from middleware.utils import _get_headers, generate_jwt
 
 
+@extend_schema_view(
+    ping=extend_schema(description="Ping the server to check if it's up."),
+    health_check=extend_schema(
+        description="Check the health status of the server and database."
+    ),
+    care_communication_check=extend_schema(
+        description="Check communication with the CARE API."
+    ),
+    care_communication_check_as_asset=extend_schema(
+        description="Check communication with the CARE API for a specific asset."
+    ),
+)
 class MiddlewareHealthViewSet(viewsets.ViewSet):
+    @extend_schema(
+        responses={200: PingResponse},
+    )
     @action(detail=False, methods=["get"])
     def ping(self, request):
         return Response({"pong": datetime.now()}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        responses={200: HealthCheckResponse},
+    )
     @action(detail=False, methods=["get"], url_path="status")
     def health_check(self, request):
         server = True
@@ -38,6 +61,9 @@ class MiddlewareHealthViewSet(viewsets.ViewSet):
 
         return Response({"server": server, "database": database}, status=status_code)
 
+    @extend_schema(
+        responses={200: str},
+    )
     @action(detail=False, methods=["get"], url_path="care/communication")
     def care_communication_check(self, request):
         try:
@@ -53,6 +79,9 @@ class MiddlewareHealthViewSet(viewsets.ViewSet):
                 status=500,
             )
 
+    @extend_schema(
+        responses={200: str},
+    )
     @action(detail=False, methods=["get"], url_path="care/communication-asset")
     def care_communication_check_as_asset(self, request):
         ip = request.GET.get("ip")
@@ -83,20 +112,16 @@ class MiddlewareHealthViewSet(viewsets.ViewSet):
             )
 
 
-@api_view(["POST"])
-def get_mock_request_list(request):
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "send_mock_req", {"type": "send_mock_req", "message": request.data}
-    )
-    return Response({"result": "Received request"}, status=status.HTTP_200_OK)
-
-
+@extend_schema(
+    request=VerifyTokenRequest,
+    responses={200: VerifyTokenResponse},
+    description="Endpoint to very care jwt tokens",
+)
 @api_view(["POST"])
 def verify_token(request):
-    token = request.data["token"]
+    request = VerifyTokenRequest.model_validate(request.data)
 
-    if not token:
+    if not request.Token:
         return Response(
             {"error": "no token provided"}, status=status.HTTP_401_UNAUTHORIZED
         )

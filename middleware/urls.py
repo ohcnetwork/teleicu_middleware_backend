@@ -24,6 +24,7 @@ from middleware.open_id import PublicJWKsView
 from middleware import views
 from middleware import consumers
 from middleware.views import MiddlewareHealthViewSet, home
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 router = SimpleRouter(trailing_slash=False)
 router.register(r"health", MiddlewareHealthViewSet, basename="health")
@@ -37,8 +38,13 @@ urlpatterns = [
     path("", include("middleware.observation.urls")),
     path("", include("middleware.camera.urls")),
     path("", include("middleware.stream.urls")),
-    path("send_mock_updates/", views.get_mock_request_list),
     path("verify_token/", views.verify_token),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
 ]
 
 

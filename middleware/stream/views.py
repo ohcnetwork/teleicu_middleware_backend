@@ -8,17 +8,36 @@ from middleware.authentication import CareAuthentication
 from rest_framework import viewsets, status
 import jwt
 from middleware.stream.types import (
+    StreamResponse,
     VerifyStreamTokenRequest,
     VideoStreamRequest,
     VitalSteamRequest,
 )
+from drf_spectacular.utils import extend_schema
+
 from middleware.utils import generate_jwt
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    get_video_feed_stream_token=extend_schema(
+        description="Get a jwt token for camera video stream"
+    ),
+    get_vital_stream_token=extend_schema(
+        description="Get a jwt token for vital stream"
+    ),
+    validate_stream_token=extend_schema(
+        description="Verify the tokens generated for streams"
+    ),
+)
 class MiddlewareStreamViewSet(viewsets.ViewSet):
-    @action(detail=False, methods=["post"], url_path="/getToken/videoFeed")
+    @extend_schema(
+        request=VideoStreamRequest,
+        responses={200: StreamResponse},
+    )
+    @action(detail=False, methods=["post"], url_path="getToken/videoFeed")
     @authentication_classes([CareAuthentication])
     def get_video_feed_stream_token(self, request):
         try:
@@ -39,7 +58,11 @@ class MiddlewareStreamViewSet(viewsets.ViewSet):
 
         return Response({"token": {middleware_token}}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["post"], url_path="/getToken/vitals")
+    @extend_schema(
+        request=VitalSteamRequest,
+        responses={200: StreamResponse},
+    )
+    @action(detail=False, methods=["post"], url_path="getToken/vitals")
     @authentication_classes([CareAuthentication])
     def get_vital_stream_token(self, request):
         try:
@@ -60,7 +83,11 @@ class MiddlewareStreamViewSet(viewsets.ViewSet):
 
         return Response({"token": {middleware_token}}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["post"], url_path="/verifyToken")
+    @extend_schema(
+        request=VerifyStreamTokenRequest,
+        responses={200: StreamResponse},
+    )
+    @action(detail=False, methods=["post"], url_path="verifyToken")
     def validate_stream_token(self, request):
         try:
             request = VerifyStreamTokenRequest.model_validate(request)

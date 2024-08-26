@@ -76,6 +76,7 @@ boto3 = "*"
 django-factory-boy = "*"
 django-cors-headers = "*"
 psutil = "*"
+drf-spectacular = "*"
 
 [dev-packages]
 ruff = "*"

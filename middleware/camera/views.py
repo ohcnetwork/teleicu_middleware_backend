@@ -11,15 +11,40 @@ from middleware.camera.types import (
     CameraAsset,
     CameraAssetMoveRequest,
     CameraAssetPresetRequest,
+    MovementResponse,
+    PresetsResponse,
+    SanpshotResponse,
+    StatusResponseModel,
 )
 import logging
-
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from middleware.camera.utils import is_camera_locked
+from middleware.types import StatusResponse
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(tags=["Camera Operations"])
 class CameraViewSet(viewsets.ViewSet):
+    @extend_schema(
+        summary="Get Camera Status",
+        description="Retrieve the status of the camera based on provided hostname, port, username, and password.",
+        parameters=[
+            OpenApiParameter(
+                name="hostname", description="Camera hostname", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="port", description="Camera port", required=True, type=int
+            ),
+            OpenApiParameter(
+                name="username", description="Camera username", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="password", description="Camera password", required=True, type=str
+            ),
+        ],
+        responses={200: StatusResponseModel},
+    )
     @action(detail=False, methods=["get"])
     def status(self, request):
         cam_request = CameraAsset(
@@ -32,6 +57,24 @@ class CameraViewSet(viewsets.ViewSet):
         response = cam.get_status()
         return Response(response, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="hostname", description="Camera hostname", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="port", description="Camera port", required=True, type=int
+            ),
+            OpenApiParameter(
+                name="username", description="Camera username", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="password", description="Camera password", required=True, type=str
+            ),
+        ],
+        responses={200: PresetsResponse},
+        description="Retrieve the camera presets.",
+    )
     @action(detail=False, methods=["get"])
     def presets(self, request):
         try:
@@ -55,6 +98,11 @@ class CameraViewSet(viewsets.ViewSet):
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    @extend_schema(
+        request=CameraAssetPresetRequest,
+        responses={200: "string"},
+        description="Set a preset",
+    )
     @action(detail=False, methods=["post"], url_name="presets")
     def set_preset(self, request):
         try:
@@ -72,6 +120,11 @@ class CameraViewSet(viewsets.ViewSet):
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    @extend_schema(
+        request=CameraAssetPresetRequest,
+        responses={200: "string"},
+        description="go to a particular preset",
+    )
     @action(detail=False, methods=["post"], url_path="gotoPreset")
     def go_to_preset(self, request):
         try:
@@ -100,6 +153,11 @@ class CameraViewSet(viewsets.ViewSet):
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    @extend_schema(
+        request=CameraAssetMoveRequest,
+        responses={200: MovementResponse},
+        description="Perform an abosulte move",
+    )
     @action(detail=False, methods=["post"], url_path="absoluteMove")
     def absolute_move(self, request):
         try:
@@ -130,6 +188,11 @@ class CameraViewSet(viewsets.ViewSet):
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    @extend_schema(
+        request=CameraAssetMoveRequest,
+        responses={200: MovementResponse},
+        description="Perform a Relative move",
+    )
     @action(detail=False, methods=["post"], url_path="relativeMove")
     def relative_move(self, request):
         try:
@@ -160,6 +223,11 @@ class CameraViewSet(viewsets.ViewSet):
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    @extend_schema(
+        request=CameraAssetMoveRequest,
+        responses={200: SanpshotResponse},
+        description="Get Sanpshot uri at a particular position",
+    )
     @action(detail=False, methods=["post"], url_path="snapshotAtLocation")
     def snapshot_at_location(self, request):
         try:
@@ -191,6 +259,10 @@ class CameraViewSet(viewsets.ViewSet):
                 {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    @extend_schema(
+        responses={200: StatusResponse},
+        description="Get statuses for camera devices",
+    )
     @action(detail=False, methods=["get"], url_path="cameras/status")
     def camera_statuses(self, request):
         statuses = redis_manager.get_redis_items(settings.CAMERA_STATUS_KEY)

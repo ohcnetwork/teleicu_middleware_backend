@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "middleware",
     "django_extensions",
     "django_celery_beat",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -157,6 +158,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.BasicAuthentication",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 ASGI_APPLICATION = "middleware.asgi.application"
@@ -219,3 +221,12 @@ S3_BUCKET_NAME = ""
 # redis status keys
 MONITOR_STATUS_KEY = env("MONITOR_STATUS_KEY")
 CAMERA_STATUS_KEY = env("CAMERA_STATUS_KEY")
+
+# Drf spectacular
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Teleicu Middleware",
+    "DESCRIPTION": "Teleicu Middleware Api Docs",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_DIST": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.5",
+}
