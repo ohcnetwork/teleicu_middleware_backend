@@ -287,24 +287,6 @@ def get_value_from_data(
     else:
         return observation.value
 
-
-def get_stored_observations():
-    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
-    if observations is None:
-        observations = []
-        cache.set(settings.REDIS_OBSERVATIONS_KEY, observations)
-
-    return ObservationList.model_validate(observations).root
-
-
-def update_stored_observations(observation_list: List[Observation]):
-    # observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
-    # if observations is None:
-    # observations = []
-    # observations.extend(observation_list)
-    cache.set(settings.REDIS_OBSERVATIONS_KEY, observation_list)
-
-
 def extract_datetime(key):
     # Split the string to get the timestamp part
     timestamp_str = key.split("_", 1)[1]
@@ -312,15 +294,19 @@ def extract_datetime(key):
     return datetime.fromisoformat(timestamp_str)
 
 
-def get_static_observations(device_id: DeviceID):
+def get_observations_from_redis():
     observation_keys = cache.keys(f"{settings.REDIS_OBSERVATIONS_KEY}*")
 
     sorted_keys = sorted(observation_keys, key=extract_datetime)
-    logger.info("first key is %s", sorted_keys[0])
-    logger.info("last key is %s", sorted_keys[-1])
     observations = []
     for key in sorted_keys:
         observations.extend(cache.get(key))
+    return observations
+
+
+def get_static_observations(device_id: DeviceID):
+
+    observations = get_observations_from_redis()
     stale_time = now() - timedelta(minutes=settings.UPDATE_INTERVAL)
 
     # last one hour data matching the device id
@@ -360,23 +346,23 @@ def generate_static_observations(observation_list: List[Observation]):
 
 
 def get_data_for_s3_dump():
-    observations = cache.get(settings.REDIS_OBSERVATIONS_KEY)
-    current_time = datetime.now()
+    observations = get_observations_from_redis()
+    stale_time = now() - timedelta(minutes=settings.UPDATE_INTERVAL)
 
     if not observations:
         return None
     observation_data_to_dump: List[Observation] = []
+
+    # for makimg dumps we just use all the stale data
     for observation in observations:
         parsed_observation = Observation.model_validate(observation)
-        if (
-            current_time - parsed_observation.taken_at
-        ).total_seconds() * 1000 > settings.UPDATE_INTERVAL:
+        if parsed_observation.taken_at < stale_time:
             observation_data_to_dump.append(parsed_observation)
 
     return observation_data_to_dump
 
 
-def make_data_dump_to_json(request: DataDumpRequest):
+def make_data_dump_to_s3(request: DataDumpRequest):
     check_in_id: Optional[str] = None
 
     if request.monitor_options:

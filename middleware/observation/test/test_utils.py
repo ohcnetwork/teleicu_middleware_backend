@@ -5,14 +5,14 @@ from sentry_sdk.crons.consts import MonitorStatus
 
 from middleware.observation.test.util_factory import ObservationFactory
 from middleware.observation.types import DataDumpRequest, MonitorOptions
-from middleware.observation.utils import make_data_dump_to_json
+from middleware.observation.utils import make_data_dump_to_s3
 
 
 class TestUtils(UnitTest):
     @patch("middleware.observation.utils.boto3.client")
     @patch("middleware.observation.utils.capture_checkin")
     @patch("middleware.observation.utils.settings")
-    def test_make_data_dump_to_json(
+    def test_make_data_dump_to_s3(
         self, mock_settings, mock_capture_checkin, mock_boto3_client
     ):
         mock_settings.S3_BUCKET_NAME = "test-bucket"
@@ -32,7 +32,7 @@ class TestUtils(UnitTest):
         )
 
         # Execute
-        make_data_dump_to_json(request)
+        make_data_dump_to_s3(request)
 
         # Assert
         mock_boto3_client.assert_called_once()

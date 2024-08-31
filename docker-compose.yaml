@@ -63,21 +63,7 @@ services:
     build: 
       dockerfile: dev.Dockerfile
     container_name: celery_worker
-    command: ["celery", "-A", "middleware.celery", "worker", "--loglevel=info"]
-    volumes:
-      - .:/app
-    env_file:
-      - ./.env
-    depends_on:
-      - redis
-      - db
-      - teleicu_middleware
-
-  celery_beat:
-    build: 
-      dockerfile: dev.Dockerfile
-    container_name: celery_beat
-    command: ["celery", "-A", "middleware.celery", "beat", "--loglevel=info"]
+    command: ["celery", "-A", "middleware.celery", "worker", "-B", "--loglevel=info"]
     volumes:
       - .:/app
     env_file:

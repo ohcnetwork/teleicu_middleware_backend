@@ -34,17 +34,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-^z7t*bx*ph&x(1t2s^v%coj-&a7qc0ws0laefrmmqv!tyx(_7^"
+
+
+SECRET_KEY = env("SECRET_KEY")
 APPEND_SLASH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", "ws://127.0.0.1", "127.0.0.1", "teleicu_middleware:8090"]
-CORS_ALLOW_ALL_ORIGINS = True
-# CORS_ALLOWED_ORIGINS = [
-#     "https://care-dev-middleware.10bedicu.in",
-# ]
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+
+
 # Application definition
+
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS")
+# CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
+
 
 INSTALLED_APPS = [
     "daphne",
@@ -192,35 +197,36 @@ CELERY_BROKER_URL = "redis://redis:6379"
 
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+
+ENABLE_UTC = True
+
 HOST_NAME = env("HOST_NAME")
-CSRF_TRUSTED_ORIGINS = ["https://care-dev-middleware.10bedicu.in"]
+
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 # Observations
-REDIS_OBSERVATIONS_KEY = env("REDIS_OBSERVATIONS_KEY")
+REDIS_OBSERVATIONS_KEY = "observations"
 UPDATE_INTERVAL = env.int("UPDATE_INTERVAL", default=60)
 
 
 # Cameras
-WSDL_PATH = env("WSDL_PATH")
-HOSTNAME = env("HOSTNAME")
-ONVIF_USERNAME = env("ONVIF_USERNAME")
-PASSWORD = env("PASSWORD")
-PORT = env("PORT")
+WSDL_PATH = "/venv/lib/python3.12/site-packages/wsdl/"
 
-CAMERA_LOCK_KEY = env("CAMERA_LOCK_KEY")
-CAMERA_LOCK_TIMEOUT = env("CAMERA_LOCK_TIMEOUT")
+
+CAMERA_LOCK_KEY = "CAMERA_LOCK_KEY"
+CAMERA_LOCK_TIMEOUT = env.int("CAMERA_LOCK_TIMEOUT", 120)
 
 
 # s3
-S3_ACCESS_KEY_ID = ""
-S3_SECRET_ACCESS_KEY = ""
-S3_ENDPOINT_URL = ""
-S3_BUCKET_NAME = ""
+S3_ACCESS_KEY_ID = env("S3_ACCESS_KEY_ID")
+S3_SECRET_ACCESS_KEY = env("S3_SECRET_ACCESS_KEY")
+S3_ENDPOINT_URL = env("S3_ENDPOINT_URL")
+S3_BUCKET_NAME = env("S3_BUCKET_NAME")
 
 
 # redis status keys
-MONITOR_STATUS_KEY = env("MONITOR_STATUS_KEY")
-CAMERA_STATUS_KEY = env("CAMERA_STATUS_KEY")
+MONITOR_STATUS_KEY = env("MONITOR_STATUS_KEY", default="monitor_statuses")
+CAMERA_STATUS_KEY = env("CAMERA_STATUS_KEY", default="camera_statuses")
 
 # Drf spectacular
 SPECTACULAR_SETTINGS = {

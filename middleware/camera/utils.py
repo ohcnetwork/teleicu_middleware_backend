@@ -1,5 +1,6 @@
 import logging
 import functools
+from drf_spectacular.utils import OpenApiParameter
 
 from django.conf import settings
 
@@ -9,6 +10,18 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
+cam_params = [
+    OpenApiParameter(
+        name="hostname", description="Camera hostname", required=True, type=str
+    ),
+    OpenApiParameter(name="port", description="Camera port", required=True, type=int),
+    OpenApiParameter(
+        name="username", description="Camera username", required=True, type=str
+    ),
+    OpenApiParameter(
+        name="password", description="Camera password", required=True, type=str
+    ),
+]
 
 def wait_for_movement_completion(func):
     @functools.wraps(func)
@@ -41,5 +54,4 @@ def unlock_camera(ip: DeviceID):
 
 
 def is_camera_locked(ip: DeviceID):
-    status = cache.get(f"{settings.CAMERA_LOCK_KEY}{ip}")
-    return status
+    return cache.get(f"{settings.CAMERA_LOCK_KEY}{ip}")

@@ -27,7 +27,7 @@ from middleware.utils import (
 from middleware.observation.utils import (
     get_data_for_s3_dump,
     get_vitals_from_observations,
-    make_data_dump_to_json,
+    make_data_dump_to_s3,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,10 +104,10 @@ def automated_daily_rounds():
 @shared_task
 def observations_s3_dump():
     data = get_data_for_s3_dump()
-    make_data_dump_to_json(
+    make_data_dump_to_s3(
         req=DataDumpRequest(
             data=data,
-            key=f"{settings.HOSTNAME}/{datetime.now()}.json",
+            key=f"{settings.HOST_NAME}/{datetime.now()}.json",
             monitor_options=MonitorOptions(
                 slug="s3_observations_dump",
                 options={
