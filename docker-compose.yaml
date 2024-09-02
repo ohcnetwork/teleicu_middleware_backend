@@ -63,7 +63,7 @@ services:
     build: 
       dockerfile: dev.Dockerfile
     container_name: celery_worker
-    command: ["celery", "-A", "middleware.celery", "worker", "-B", "--loglevel=info"]
+    command: ["sh", "-c", "/app/start-celery.sh"]
     volumes:
       - .:/app
     env_file:
