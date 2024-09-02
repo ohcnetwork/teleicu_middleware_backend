@@ -12,7 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from authlib.jose import JsonWebKey
 import base64
-
+from pathlib import Path
+import onvif
 from pathlib import Path
 import environ
 import json
@@ -210,7 +211,7 @@ UPDATE_INTERVAL = env.int("UPDATE_INTERVAL", default=60)
 
 
 # Cameras
-WSDL_PATH = "/venv/lib/python3.12/site-packages/wsdl/"
+WSDL_PATH = Path(onvif.__file__).parent.parent / "wsdl"
 
 
 CAMERA_LOCK_KEY = "CAMERA_LOCK_KEY"
