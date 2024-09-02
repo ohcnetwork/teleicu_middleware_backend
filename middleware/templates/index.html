@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teleicu Middleware | Home{% endblock %}
+<link href="{% static 'css/tailwind.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'styles.css' %}">
+{% block content %}
+<main class="py-8">
+    Status
+
+    <h1 class="flex items-center text-xl">
+        Server Status :&nbsp;
+
+        <span id="server-status-dot"
+            class="inline-block w-4 h-4 bg-red-500 rounded-full animate-ping " data-status="red"></span>
+            
+            
+            &nbsp;
+        <span id="server-status-text"> Disconnected</span>
+    </h1>
+
+    <div id="resource">
+        <div class="grid grid-cols-2 py-16">
+            <div class="transition hover:text-white hover:bg-primary-500 flex items-center justify-center flex-col p-8">
+                <h1 class="text-4xl mb-4" id="cpu-usage">0%</h1>
+                <p class="text-2xl">CPU</p>
+            </div>
+            <div class="transition hover:text-white hover:bg-primary-500 flex items-center justify-center flex-col px-8 py-16">
+                <h1 class="text-4xl mb-4" id="memory-usage">0%</h1>
+                <p class="text-2xl">Memory</p>
+            </div>
+            <div class="transition hover:text-white hover:bg-primary-500 flex items-center justify-center flex-col px-8 py-16">
+                <h1 class="text-4xl mb-4" id="server-load">0%</h1>
+                <p class="text-2xl">Server Load</p>
+            </div>
+            <div class="transition hover:text-white hover:bg-primary-500 flex items-center justify-center flex-col px-8 py-16">
+                <h1 class="text-4xl mb-4" id="uptime">0%</h1>
+                <p class="text-2xl">Uptime</p>
+            </div>
+        </div>
+    </div>  
+    
+    <p class="text-2xl">Devices</p>
+    <div id="devices-status-container" class="grid grid-cols-2 gap-4 pb-16"></div>
+    <p class="text-2xl">Cameras</p>
+    <div id="camera-status-container" class="grid grid-cols-2 gap-4 pb-16"></div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/ws.js' %}"></script>
+{% endblock %}
