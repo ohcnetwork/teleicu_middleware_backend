@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   db:
     image: postgres
@@ -30,9 +28,9 @@ services:
   # teleicu_middleware
   teleicu_middleware:
     restart: always
-    build: 
+    build:
       dockerfile: dev.Dockerfile
-    command: ["python", "manage.py" , "runserver" , "0.0.0.0:8090"]
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8090"]
     volumes:
       - .:/app
     depends_on:
@@ -45,7 +43,7 @@ services:
       - "8090:8090"
 
   celery:
-    build: 
+    build:
       dockerfile: dev.Dockerfile
     command: ["sh", "-c", "/app/start-celery.sh"]
     volumes:
@@ -60,7 +58,7 @@ services:
   # proxies requests to internal services
   reverse-proxy:
     restart: always
-    image: ghcr.io/coronasafe/teleicu_nginx/teleicu_nginx:latest
+    image: ghcr.io/ohcnetwork/teleicu_nginx/teleicu_nginx:latest
     depends_on:
       - teleicu_middleware
     ports:

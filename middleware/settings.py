@@ -20,16 +20,11 @@ from authlib.jose import JsonWebKey
 
 from middleware.utils import generate_encoded_jwks
 
-env = environ.Env()
-environ.Env.read_env()
-
-# import django
-
-# django.setup()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+environ.Env.read_env(str(BASE_DIR / ".env"))
+env = environ.Env()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
