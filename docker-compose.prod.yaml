@@ -36,8 +36,8 @@ services:
       - "8090:8090"
 
   celery:
-    build: 
-      dockerfile: dev.Dockerfile
+    restart: always
+    image: ghcr.io/ohcnetwork/teleicu_middleware_backend:latest
     command: ["sh", "-c", "/app/start-celery.sh"]
     env_file:
       - ./.env

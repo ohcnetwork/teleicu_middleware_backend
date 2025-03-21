@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres
-    restart: always
+    restart: unless-stopped
     env_file:
       - ./.env
     volumes:
@@ -11,13 +11,13 @@ services:
 
   redis:
     image: redis:latest
-    restart: always
+    restart: unless-stopped
     ports:
       - "6379:6379"
 
   # rtsptoweb:
   roverr_rtsp_stream:
-    restart: always
+    restart: unless-stopped
     image: ghcr.io/deepch/rtsptoweb:latest
     volumes:
       - ./RtspConfig.json:/config/config.json
@@ -27,7 +27,7 @@ services:
 
   # teleicu_middleware
   teleicu_middleware:
-    restart: always
+    restart: unless-stopped
     build:
       dockerfile: dev.Dockerfile
     command: ["python", "manage.py", "runserver", "0.0.0.0:8090"]
@@ -43,6 +43,7 @@ services:
       - "8090:8090"
 
   celery:
+    restart: unless-stopped
     build:
       dockerfile: dev.Dockerfile
     command: ["sh", "-c", "/app/scripts/start-celery.sh"]
@@ -57,7 +58,7 @@ services:
 
   # proxies requests to internal services
   reverse-proxy:
-    restart: always
+    restart: unless-stopped
     image: ghcr.io/ohcnetwork/teleicu_nginx/teleicu_nginx:latest
     depends_on:
       - teleicu_middleware
