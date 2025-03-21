@@ -28,11 +28,8 @@ services:
   # teleicu_middleware
   teleicu_middleware:
     restart: always
-    build:
-      dockerfile: dev.Dockerfile
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8090"]
-    volumes:
-      - .:/app
+    image: ghcr.io/ohcnetwork/teleicu_middleware_backend:latest
+    command: ["sh", "-c", "/app/start-backend.sh"]
     depends_on:
       - redis
       - roverr_rtsp_stream
@@ -43,11 +40,9 @@ services:
       - "8090:8090"
 
   celery:
-    build:
+    build: 
       dockerfile: dev.Dockerfile
-    command: ["sh", "-c", "/app/scripts/start-celery.sh"]
-    volumes:
-      - .:/app
+    command: ["sh", "-c", "/app/start-celery.sh"]
     env_file:
       - ./.env
     depends_on:

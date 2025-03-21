@@ -35,16 +35,16 @@ env = environ.Env()
 SECRET_KEY = env("SECRET_KEY")
 APPEND_SLASH = False
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DJANGO_DEBUG", False)
 
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 
 # Application definition
 
-CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS")
-# CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=False)
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 
 INSTALLED_APPS = [
@@ -98,12 +98,9 @@ WSGI_APPLICATION = "middleware.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+DATABASES = {"default": env.db("DATABASE_URL", default="postgres://db:5432/teleicu_middleware")}
+DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=600)
 
 
 # Password validation
@@ -142,7 +139,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    # BASE_DIR / "static",
     "middleware/static",
 ]
 
@@ -167,16 +164,19 @@ ASGI_APPLICATION = "middleware.asgi.application"
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 
+REDIS_URL = env("REDIS_URL", default="redis://redis:6379")
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",  # Redis server location
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
     }
 }
 
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
 
 # Configs
 CARE_URL = env("CARE_URL")
@@ -189,7 +189,6 @@ CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
 JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))
 )
-CELERY_BROKER_URL = "redis://redis:6379"
 
 
 ENABLE_UTC = True
@@ -208,7 +207,7 @@ WSDL_PATH = Path(onvif.__file__).parent.parent / "wsdl"
 
 
 CAMERA_LOCK_KEY = "CAMERA_LOCK_KEY"
-CAMERA_LOCK_TIMEOUT = env.int("CAMERA_LOCK_TIMEOUT", 120)
+CAMERA_LOCK_TIMEOUT = env.int("CAMERA_LOCK_TIMEOUT", default=120)
 
 
 # s3
