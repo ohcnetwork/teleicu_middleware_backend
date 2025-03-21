@@ -65,6 +65,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -92,6 +93,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "middleware.wsgi.application"
+ASGI_APPLICATION = "middleware.asgi.application"
 
 
 # Database
@@ -100,6 +102,7 @@ WSGI_APPLICATION = "middleware.wsgi.application"
 DATABASES = {"default": env.db("DATABASE_URL", default="postgres://db:5432/teleicu_middleware")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=600)
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # Password validation
@@ -138,15 +141,24 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [
-    # BASE_DIR / "static",
-    "middleware/static",
+    BASE_DIR / "middleware/static",
 ]
+STATIC_ROOT = str(BASE_DIR / "staticfiles")
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#std-setting-STORAGES
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    }
+}
+
+# https://whitenoise.readthedocs.io/en/latest/django.html#WHITENOISE_MANIFEST_STRICT
+WHITENOISE_MANIFEST_STRICT = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
@@ -157,8 +169,6 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
-
-ASGI_APPLICATION = "middleware.asgi.application"
 
 REDIS_URL = env("REDIS_URL", default="redis://redis:6379")
 

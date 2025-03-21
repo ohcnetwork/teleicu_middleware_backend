@@ -28,6 +28,7 @@ requests = "==2.32.3"
 sentry-sdk = "==2.19.2"
 zope = "*"
 psycopg = {extras = ["binary"], version = "*"}
+whitenoise = "*"
 
 [dev-packages]
 django-factory-boy = "*"

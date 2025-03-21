@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a7c1653e5bb1288096082a7b650a01dabb7fd81eaf2e31e1a0a0fbfd0f7927e9"
+            "sha256": "affb742a64b4b9b50fc593bb14e7f8adb1cae1d7785a158a659e32e1f55fa525"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1761,6 +1761,15 @@
             ],
             "markers": "python_version >= '3.9'",
             "version": "==3.0.4"
+        },
+        "whitenoise": {
+            "hashes": [
+                "sha256:8c4a7c9d384694990c26f3047e118c691557481d624f069b7f7752a2f735d609",
+                "sha256:c8a489049b7ee9889617bb4c274a153f3d979e8f51d2efd0f5b403caf41c57df"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==6.9.0"
         },
         "wsgiproxy2": {
             "hashes": [
