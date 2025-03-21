@@ -27,6 +27,7 @@ redis = "==5.2.1"
 requests = "==2.32.3"
 sentry-sdk = "==2.19.2"
 zope = "*"
+psycopg-binary = "*"
 
 [dev-packages]
 django-factory-boy = "*"
