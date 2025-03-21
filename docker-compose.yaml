@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres
+    image: postgres:17
     restart: unless-stopped
     env_file:
       - ./.env
@@ -10,7 +10,7 @@ services:
       - "5432:5432"
 
   redis:
-    image: redis:latest
+    image: redis:7.2
     restart: unless-stopped
     ports:
       - "6379:6379"

@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "middleware",
     "django_extensions",
-    "django_celery_beat",
     "drf_spectacular",
 ]
 
@@ -161,9 +160,6 @@ REST_FRAMEWORK = {
 
 ASGI_APPLICATION = "middleware.asgi.application"
 
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
-
-
 REDIS_URL = env("REDIS_URL", default="redis://redis:6379")
 
 CACHES = {
@@ -173,6 +169,17 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
+    }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts":[{
+                "address": REDIS_URL,
+            }]
+        }
     }
 }
 
