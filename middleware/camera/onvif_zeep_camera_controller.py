@@ -10,7 +10,9 @@ from middleware.camera.utils import wait_for_movement_completion
 
 logger = logging.getLogger(__name__)
 
-
+NO_ERROR = (
+    "noerror",
+)
 class OnvifZeepCameraController(AbstractCameraController):
     def __init__(self, req: CameraAsset) -> None:
         try:
@@ -81,6 +83,9 @@ class OnvifZeepCameraController(AbstractCameraController):
         pan_tilt_status = ptz_status.MoveStatus.PanTilt
         zoom_status = ptz_status.MoveStatus.Zoom
         error = ptz_status.Error
+        if error and error.lower().replace(" ", "") in NO_ERROR:
+            # this is not an error
+            error = None
         status = {
             "position": {
                 "x": pan,
