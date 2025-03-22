@@ -26,7 +26,7 @@ RUN pipenv install --deploy --categories "packages"
 FROM base AS runtime
 
 RUN addgroup --system django \
-  && adduser --system --ingroup django django
+  && adduser --system --ingroup django --home $APP_HOME django
 
 RUN chown django:django $APP_HOME
 
