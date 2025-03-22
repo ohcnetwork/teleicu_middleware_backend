@@ -10,13 +10,12 @@ on:
       - staging
     paths-ignore:
       - "docs/**"
+      - "nginx/**"
+      - "docker/nginx.Dockerfile"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  IMAGE_NAME: teleicu_middleware_new
 
 
 jobs:
@@ -68,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-build-${{ hashFiles('Pipfile.lock', 'prod.Dockerfile') }}
+          key: ${{ runner.os }}-buildx-build-${{ hashFiles('Pipfile.lock', 'docker/prod.Dockerfile') }}
           restore-keys: |
             ${{ runner.os }}-buildx-build-
 
@@ -76,7 +75,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: prod.Dockerfile
+          file: ./docker/prod.Dockerfile
           push: true
           provenance: false
           platforms: linux/amd64,linux/arm64

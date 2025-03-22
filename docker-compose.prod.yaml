@@ -49,7 +49,7 @@ services:
   # proxies requests to internal services
   reverse-proxy:
     restart: always
-    image: ghcr.io/ohcnetwork/teleicu_nginx/teleicu_nginx:latest
+    image: ghcr.io/10bedicu/teleicu_gateway_nginx:latest
     depends_on:
       - teleicu_middleware
     ports:

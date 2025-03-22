@@ -7,7 +7,7 @@ ARG BUILD_ENVIRONMENT="production"
 WORKDIR $APP_HOME
 
 ENV BUILD_ENVIRONMENT=$BUILD_ENVIRONMENT
-ENV PYTHONUNBUFFERED=1s
+ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PIPENV_VENV_IN_PROJECT=1
 ENV PIPENV_CACHE_DIR=/root/.cache/pip
@@ -16,10 +16,11 @@ ENV PATH=$APP_HOME/.venv/bin:$PATH
 
 FROM base AS builder
 
+RUN pip install pipenv==2024.4.0
+
 RUN python -m venv $APP_HOME/.venv
 COPY Pipfile Pipfile.lock $APP_HOME/
-RUN --mount=type=cache,target=/root/.cache/pip pip install pipenv==2024.4.0
-RUN --mount=type=cache,target=/root/.cache/pip pipenv install --deploy --categories "packages"
+RUN pipenv install --deploy --categories "packages"
 
 
 FROM base AS runtime

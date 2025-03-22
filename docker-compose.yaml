@@ -29,7 +29,8 @@ services:
   teleicu_middleware:
     restart: unless-stopped
     build:
-      dockerfile: dev.Dockerfile
+      context: .
+      dockerfile: docker/dev.Dockerfile
     command: ["python", "manage.py", "runserver", "0.0.0.0:8090"]
     volumes:
       - .:/app
@@ -45,7 +46,8 @@ services:
   celery:
     restart: unless-stopped
     build:
-      dockerfile: dev.Dockerfile
+      context: .
+      dockerfile: docker/dev.Dockerfile
     command: ["sh", "-c", "/app/scripts/start-celery.sh"]
     volumes:
       - .:/app
@@ -59,7 +61,9 @@ services:
   # proxies requests to internal services
   reverse-proxy:
     restart: unless-stopped
-    image: ghcr.io/ohcnetwork/teleicu_nginx/teleicu_nginx:latest
+    build:
+      context: nginx
+      dockerfile: ../docker/nginx.Dockerfile
     depends_on:
       - teleicu_middleware
     ports:
