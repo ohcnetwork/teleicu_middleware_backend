@@ -177,5 +177,5 @@ class CameraViewSet(viewsets.ViewSet):
         except InvalidCameraCredentialsException as exc:
             logger.error("An exception occurred while getting presets: %s", exc)
             return Response(
-                {"message": exc.default_detail}, status=status.HTTP_400_BAD_REQUEST
+                {"message": exc.detail}, status=status.HTTP_400_BAD_REQUEST
             )

@@ -18,13 +18,14 @@ class OnvifZeepCameraController(AbstractCameraController):
                 req.hostname, req.port, req.username, req.password, settings.WSDL_PATH
             )
         except ONVIFError as err:
+            formatted_error = f"{err.reason=}, {err.code=}"
             logger.debug(
                 "Exception raised while connecting to Camera with req: %s and reason: %s",
                 req,
-                err.reason,
+                formatted_error,
             )
 
-            raise InvalidCameraCredentialsException
+            raise InvalidCameraCredentialsException(detail=formatted_error)
 
         media = cam.create_media_service()
 
