@@ -6,8 +6,9 @@ on:
       - develop
       - staging
     paths:
-    - "nginx/**"
-    - "docker/nginx.Dockerfile"
+      - "nginx/**"
+      - "docker/nginx.Dockerfile"
+      - ".github/workflows/build-nginx.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
