@@ -24,7 +24,7 @@ services:
   # teleicu_middleware
   teleicu_middleware:
     restart: always
-    image: ghcr.io/ohcnetwork/teleicu_middleware_backend:latest
+    image: ghcr.io/10bedicu/teleicu_gateway:latest
     command: ["sh", "-c", "/app/start-backend.sh"]
     depends_on:
       - redis
@@ -37,7 +37,7 @@ services:
 
   celery:
     restart: always
-    image: ghcr.io/ohcnetwork/teleicu_middleware_backend:latest
+    image: ghcr.io/10bedicu/teleicu_gateway:latest
     command: ["sh", "-c", "/app/start-celery.sh"]
     env_file:
       - ./.env
