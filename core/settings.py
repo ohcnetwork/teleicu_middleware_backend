@@ -12,11 +12,17 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import base64
 import json
+import logging
 from pathlib import Path
 
 import environ
 import onvif
+import sentry_sdk
 from authlib.jose import JsonWebKey
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration, ignore_logger
+from sentry_sdk.integrations.redis import RedisIntegration
 
 from common.utils import generate_encoded_jwks
 
@@ -249,3 +255,23 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_DIST": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.5",
 }
+
+APP_VERSION = env("APP_VERSION", default="unknown")
+
+if SENTRY_DSN := env("SENTRY_DSN", default=""):
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        release=APP_VERSION,
+        environment=env("SENTRY_ENVIRONMENT", default="deployment-unknown"),
+        traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0),
+        profiles_sample_rate=env.float("SENTRY_PROFILES_SAMPLE_RATE", default=0),
+        integrations=[
+            LoggingIntegration(
+                event_level=env.int("SENTRY_EVENT_LEVEL", default=logging.ERROR)
+            ),
+            DjangoIntegration(),
+            CeleryIntegration(monitor_beat_tasks=True),
+            RedisIntegration(),
+        ],
+    )
+    ignore_logger("django.security.DisallowedHost")
