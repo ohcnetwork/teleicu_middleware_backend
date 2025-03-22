@@ -1,5 +1,3 @@
-import base64
-import json
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, TypeVar
@@ -7,7 +5,7 @@ from uuid import UUID
 
 import pytz
 import requests
-from authlib.jose import JsonWebKey, jwt
+from authlib.jose import jwt
 from django.conf import settings
 from pydantic import BaseModel
 
@@ -28,15 +26,6 @@ def generate_jwt(claims=None, exp=60, jwks=None):
         **claims,
     }
     return jwt.encode(header, payload, jwks).decode("utf-8")
-
-
-def generate_encoded_jwks():
-    key = JsonWebKey.generate_key("RSA", 2048, is_private=True)
-    key = key.as_dict(key.dumps_private_key(), alg="RS256")
-
-    keys = {"keys": [key]}
-    keys_json = json.dumps(keys)
-    return base64.b64encode(keys_json.encode()).decode()
 
 
 def _get_headers(claims: dict = None) -> dict:

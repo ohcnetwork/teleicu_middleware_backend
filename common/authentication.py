@@ -6,7 +6,6 @@ from channels.auth import AuthMiddlewareStack
 from channels.exceptions import DenyConnection
 from channels.middleware import BaseMiddleware
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from rest_framework import HTTP_HEADER_ENCODING
@@ -21,18 +20,26 @@ def jwk_response_cache_key(url: str) -> str:
     return f"jwk_response:{url}"
 
 
-class MiddlewareUser(AnonymousUser):
+class MiddlewareUser:
     """
     Read-only user class for middleware authentication
     """
 
+    id = None
+    pk = None
+    username = ""
+    is_staff = False
+    is_active = False
+    is_superuser = False
+    is_alternative_login = True
+    is_authenticated = True
+    is_anonymous = True
+
+    user_permissions = []
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.username = "middleware_123"
-
-    @property
-    def is_authenticated(self):
-        return True
 
 
 class CareAuthentication(JWTAuthentication):

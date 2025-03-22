@@ -8,7 +8,7 @@ from requests import Response
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, authentication_classes
 
-from middleware.authentication import CareAuthentication
+from common.authentication import CareAuthentication
 from middleware.stream.types import (
     StreamResponse,
     VerifyStreamTokenRequest,

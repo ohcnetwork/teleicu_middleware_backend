@@ -1,9 +1,9 @@
 import requests
 from django.conf import settings
-from django.utils import timezone
 from django.db import connection
 from django.db.utils import OperationalError
 from django.shortcuts import render
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view

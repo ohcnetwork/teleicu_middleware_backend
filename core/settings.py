@@ -18,13 +18,16 @@ import environ
 import onvif
 from authlib.jose import JsonWebKey
 
-from middleware.utils import generate_encoded_jwks
+from common.utils import generate_encoded_jwks
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-environ.Env.read_env(str(BASE_DIR / ".env"))
 env = environ.Env()
+
+if READ_DOT_ENV_FILE := env.bool("DJANGO_READ_DOT_ENV_FILE", default=False):
+    # OS environment variables take precedence over variables from .env
+    env.read_env(str(BASE_DIR / ".env"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -57,9 +60,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
-    "middleware",
     "django_extensions",
     "drf_spectacular",
+    "middleware",
 ]
 
 MIDDLEWARE = [
@@ -74,7 +77,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "middleware.urls"
+ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
@@ -92,14 +95,16 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "middleware.wsgi.application"
-ASGI_APPLICATION = "middleware.asgi.application"
+WSGI_APPLICATION = "core.wsgi.application"
+ASGI_APPLICATION = "core.asgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {"default": env.db("DATABASE_URL", default="postgres://db:5432/teleicu_middleware")}
+DATABASES = {
+    "default": env.db("DATABASE_URL", default="postgres://db:5432/teleicu_middleware")
+}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=600)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -140,9 +145,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [
-    BASE_DIR / "middleware/static",
-]
 STATIC_ROOT = str(BASE_DIR / "staticfiles")
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#std-setting-STORAGES
@@ -157,7 +159,6 @@ WHITENOISE_MANIFEST_STRICT = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
 
 
 REST_FRAMEWORK = {
@@ -186,10 +187,12 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts":[{
-                "address": REDIS_URL,
-            }]
-        }
+            "hosts": [
+                {
+                    "address": REDIS_URL,
+                }
+            ]
+        },
     }
 }
 

@@ -13,13 +13,11 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 
-from middleware.authentication import TokenAuthMiddlewareStack
-from middleware.urls import websocket_urlpatterns
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "middleware.settings")
-
-
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django_asgi_app = get_asgi_application()
+
+from common.authentication import TokenAuthMiddlewareStack  # noqa: E402
+from core.urls import websocket_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter(
     {

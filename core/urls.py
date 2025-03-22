@@ -20,9 +20,9 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import SimpleRouter
 
-from middleware import consumers, views
+from middleware.consumers import LoggerConsumer, observations
 from middleware.open_id import PublicJWKsView
-from middleware.views import MiddlewareHealthViewSet, home
+from middleware.views import MiddlewareHealthViewSet, home, verify_token
 
 router = SimpleRouter(trailing_slash=False)
 router.register(r"health", MiddlewareHealthViewSet, basename="health")
@@ -36,7 +36,7 @@ urlpatterns = [
     path("", include("middleware.observation.urls")),
     path("", include("middleware.camera.urls")),
     path("", include("middleware.stream.urls")),
-    path("verify_token/", views.verify_token),
+    path("verify_token/", verify_token),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
@@ -47,9 +47,9 @@ urlpatterns = [
 
 
 websocket_urlpatterns = [
-    path(r"logger", consumers.LoggerConsumer.as_asgi()),
+    path(r"logger", LoggerConsumer.as_asgi()),
     path(
         r"observations/<str:ip_address>",
-        consumers.observations.as_asgi(),
+        observations.as_asgi(),
     ),
 ]
