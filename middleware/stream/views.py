@@ -4,9 +4,9 @@ import jwt
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from pydantic import ValidationError
-from requests import Response
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, authentication_classes
+from rest_framework.response import Response
 
 from common.authentication import CareAuthentication
 from middleware.stream.types import (
@@ -40,7 +40,7 @@ class MiddlewareStreamViewSet(viewsets.ViewSet):
     @authentication_classes([CareAuthentication])
     def get_video_feed_stream_token(self, request):
         try:
-            request = VideoStreamRequest.model_validate(request)
+            request = VideoStreamRequest.model_validate(request.data)
         except ValidationError:
             return Response(
                 {"message": "stream and ip are required"},
