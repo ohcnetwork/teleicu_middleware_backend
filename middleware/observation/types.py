@@ -65,7 +65,7 @@ class Observation(BaseModel):
     date_time: datetime = Field(alias="date-time")
     patient_id: str = Field(alias="patient-id")
     patient_name: Optional[str] = Field(default=None, alias="patient-name")
-    status: Optional[Status] = None
+    status: str = None
     value: Optional[float] = None
     unit: Optional[str] = None
     interpretation: Optional[Interpretation] = None
