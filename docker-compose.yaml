@@ -16,7 +16,7 @@ services:
       - "6379:6379"
 
   # rtsptoweb:
-  roverr_rtsp_stream:
+  stream-server:
     restart: unless-stopped
     image: ghcr.io/deepch/rtsptoweb:latest
     volumes:
@@ -25,8 +25,8 @@ services:
       - "8080:8080"
 
 
-  # teleicu_middleware
-  teleicu_middleware:
+  # teleicu-middleware
+  teleicu-middleware:
     restart: unless-stopped
     build:
       context: .
@@ -36,7 +36,7 @@ services:
       - .:/app
     depends_on:
       - redis
-      - roverr_rtsp_stream
+      - stream-server
       - db
     env_file:
       - ./.env
@@ -56,7 +56,7 @@ services:
     depends_on:
       - redis
       - db
-      - teleicu_middleware
+      - teleicu-middleware
 
   # proxies requests to internal services
   reverse-proxy:
@@ -65,7 +65,7 @@ services:
       context: nginx
       dockerfile: ../docker/nginx.Dockerfile
     depends_on:
-      - teleicu_middleware
+      - teleicu-middleware
     ports:
       - "8001:8001"
 
