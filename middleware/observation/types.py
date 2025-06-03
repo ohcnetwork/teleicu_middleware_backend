@@ -42,10 +42,23 @@ class Interpretation(str, Enum):
 
 
 class WaveName(str, Enum):
+    I = "I"
     II = "II"
+    III = "III"
+    LEAD_I = "Lead I"
+    LEAD_II = "Lead II"
+    LEAD_III = "Lead III"
+    AVR = "aVR"
+    AVL = "aVL"
+    AVF = "aVF"
+    V1 = "V1"
+    V2 = "V2"
+    V3 = "V3"
+    V4 = "V4"
+    V5 = "V5"
+    V6 = "V6"
     PLETH = "Pleth"
     RESPIRATION = "Respiration"
-
 
 class BloodPressure(BaseModel):
     value: Optional[float] = None
