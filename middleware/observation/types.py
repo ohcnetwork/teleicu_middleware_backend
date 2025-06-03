@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, NewType, Optional, Union
+from typing import Dict, List, NewType, Optional
 
 from django.utils.timezone import now
 from pydantic import BaseModel, Field, RootModel, field_serializer
@@ -42,21 +42,7 @@ class Interpretation(str, Enum):
 
 
 class WaveName(str, Enum):
-    I = "I"
     II = "II"
-    III = "III"
-    LEAD_I = "Lead I"
-    LEAD_II = "Lead II"
-    LEAD_III = "Lead III"
-    AVR = "aVR"
-    AVL = "aVL"
-    AVF = "aVF"
-    V1 = "V1"
-    V2 = "V2"
-    V3 = "V3"
-    V4 = "V4"
-    V5 = "V5"
-    V6 = "V6"
     PLETH = "Pleth"
     RESPIRATION = "Respiration"
 
@@ -79,7 +65,7 @@ class Observation(BaseModel):
     date_time: datetime = Field(alias="date-time")
     patient_id: str = Field(alias="patient-id")
     patient_name: Optional[str] = Field(default=None, alias="patient-name")
-    status: Union[Status, str, None] = None
+    status: str = None
     value: Optional[float] = None
     unit: Optional[str] = None
     interpretation: Optional[Interpretation] = None
@@ -142,4 +128,3 @@ class DataDumpRequest(BaseModel):
     data: List[Observation]
     key: str
     monitor_options: MonitorOptions
-```
