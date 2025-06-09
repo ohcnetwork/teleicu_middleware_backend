@@ -88,7 +88,6 @@ class CameraViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="gotoPreset")
     def go_to_preset(self, request):
         cam_request = CameraAssetPresetRequest.model_validate(request.data)
-        self.check_camera_state(device_id=cam_request.hostname, raise_error=True)
         cam = OnvifZeepCameraController(cam_request)
         response = cam.go_to_preset(preset_id=cam_request.preset)
         if not response:
