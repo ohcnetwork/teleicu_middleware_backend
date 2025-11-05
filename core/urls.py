@@ -36,6 +36,7 @@ urlpatterns = [
     path("", include("middleware.observation.urls")),
     path("", include("middleware.camera.urls")),
     path("", include("middleware.stream.urls")),
+    path("lab_analyzer/", include("middleware.lab_analyzer.urls")),
     path("verify_token/", verify_token),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

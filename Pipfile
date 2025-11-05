@@ -29,6 +29,8 @@ zope = "*"
 psycopg = {extras = ["binary"], version = "*"}
 whitenoise = "*"
 sentry-sdk = "*"
+hl7 = "*"
+aiohttp = "*"
 
 [dev-packages]
 django-factory-boy = "*"

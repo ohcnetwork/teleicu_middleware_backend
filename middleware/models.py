@@ -54,3 +54,21 @@ class DailyRound(models.Model):
         indexes = [
             models.Index(fields=["asset_external_id"]),
         ]
+
+
+class LabAnalyzerResult(models.Model):
+    asset_external_id = models.UUIDField()
+    ip_address = models.GenericIPAddressField()
+    test_id = models.CharField(max_length=255)
+    status = models.CharField(max_length=255)
+    diagnostics_id = models.UUIDField()
+    test_request = models.JSONField()
+    result = models.JSONField()
+    time = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["asset_external_id"]),
+            models.Index(fields=["ip_address"]),
+            models.Index(fields=["test_id"]),
+        ]

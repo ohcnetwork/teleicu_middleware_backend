@@ -4,4 +4,4 @@
 python manage.py migrate
 
 # Start Celery worker
-celery -A core.celery worker -B --loglevel=info
+celery -A core.celery_app worker -B --loglevel=info
