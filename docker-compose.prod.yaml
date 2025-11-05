@@ -24,7 +24,7 @@ services:
   # teleicu-middleware
   teleicu-middleware:
     restart: always
-    image: ghcr.io/10bedicu/teleicu_gateway:latest
+    image: ghcr.io/10bedicu/teleicu_gateway:lab-analyzer
     command: ["sh", "-c", "/app/start-backend.sh"]
     depends_on:
       - redis
@@ -35,9 +35,27 @@ services:
     ports:
       - "8090:8090"
 
+  hl7-server:
+    restart: unless-stopped
+    image: ghcr.io/10bedicu/teleicu_gateway:lab-analyzer
+    command: ["sh", "-c", "/app/start-hl7-server.sh"]
+    env_file:
+      - ./.env
+    depends_on:
+      - teleicu-middleware
+    ports:
+      - "2577:2577"
+
+  dummy-lab-analyzer:
+    restart: unless-stopped
+    image:  ghcr.io/10bedicu/mock_lab_analyzer:latest
+    environment:
+      - MLLP_SERVER_ADDRESS=hl7-server:2577
+      - LISTEN_PORT=2575
+
   celery:
     restart: always
-    image: ghcr.io/10bedicu/teleicu_gateway:latest
+    image: ghcr.io/10bedicu/teleicu_gateway:lab-analyzer
     command: ["sh", "-c", "/app/start-celery.sh"]
     env_file:
       - ./.env
