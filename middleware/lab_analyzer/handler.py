@@ -112,16 +112,17 @@ def hl7_result_message_to_json(hl7_message: Message) -> dict:
     
     # Helper function to determine interpretation based on abnormal flag
     def get_interpretation(abnormal_flag):
-        # HL7 abnormal flags: N=Normal, L=Low, H=High, A=Abnormal
+        # HL7 abnormal flags: N=Normal, L=Low, H=High, A=Abnormal, HH=Critical High, LL=Critical Low
         flag_map = {
             "N": "normal",
             "L": "low",
             "H": "high",
             "A": "abnormal",
+            "HH": "critical high",
+            "LL": "critical low",
             "": "normal"
         }
         return flag_map.get(str(abnormal_flag).strip(), "normal")
-    
     # Helper to convert HL7 timestamp to ISO 8601
     def parse_hl7_datetime(dt_value):
         dt_str = str(dt_value).strip()
