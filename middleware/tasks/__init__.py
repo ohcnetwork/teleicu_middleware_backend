@@ -1,28 +1,19 @@
 from celery import current_app
 from celery.schedules import crontab
+from django.conf import settings
 
-from middleware.tasks import (
-    automated_daily_rounds,
-    observations_s3_dump,
-    retrieve_asset_config,
-    store_camera_statuses,
-)
+from middleware.tasks.automated_observations import automated_observations
+from middleware.tasks.observations_s3_dump import observations_s3_dump
+from middleware.tasks.store_camera_statuses import store_camera_statuses
 
 
 @current_app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    # Run retrieve_asset_config every minute
+    # Run automated observations every hour
     sender.add_periodic_task(
-        crontab(minute="*"),
-        retrieve_asset_config.s(),
-        name="run-retrieve-asset-config",
-    )
-
-    # Run automated_daily_rounds every hour
-    sender.add_periodic_task(
-        crontab(minute="0"),
-        automated_daily_rounds.s(),
-        name="run-automated-daily-round",
+        settings.AUTOMATED_OBSERVATIONS_INTERVAL * 60,
+        automated_observations.s(),
+        name="run-automated-observations",
     )
 
     # Run observations_s3_dump every 30 seconds

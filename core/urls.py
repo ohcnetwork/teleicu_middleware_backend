@@ -32,7 +32,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", home, name="home"),
     path("", include(router.urls)),
-    path(".well-known/openid-configuration/", PublicJWKsView.as_view()),
+    path("openid-configuration/", PublicJWKsView.as_view()),
     path("", include("middleware.observation.urls")),
     path("", include("middleware.camera.urls")),
     path("", include("middleware.stream.urls")),

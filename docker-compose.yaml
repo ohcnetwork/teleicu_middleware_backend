@@ -6,14 +6,10 @@ services:
       - ./.env
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
   redis:
     image: redis:7.2
     restart: unless-stopped
-    ports:
-      - "6379:6379"
 
   # rtsptoweb:
   stream-server:
@@ -23,7 +19,6 @@ services:
       - ./RtspConfig.json:/config/config.json
     ports:
       - "8080:8080"
-
 
   # teleicu-middleware
   teleicu-middleware:
