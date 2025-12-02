@@ -24,6 +24,63 @@ class ObservationID(str, Enum):
     WAVEFORM_RESPIRATION = "waveform_Respiration"
 
 
+class Coding(BaseModel):
+    """Represents a code from a code system"""
+
+    system: str | None = None
+    version: str | None = None
+    code: str
+    display: str | None = None
+
+
+class ObservationValueType(str, Enum):
+    boolean = "boolean"
+    decimal = "decimal"
+    integer = "integer"
+    string = "string"
+    date = "date"
+    datetime = "dateTime"
+    time = "time"
+
+
+class ObservationValue(BaseModel):
+    value: str | None = None
+    unit: Coding | None = None
+
+
+class ObservationStatus(str, Enum):
+    final = "final"
+    amended = "amended"
+    entered_in_error = "entered_in_error"
+
+
+VitalSignsCoding = Coding(
+    code="vital-signs",
+    system="http://terminology.hl7.org/CodeSystem/observation-category",
+    display="Vital Signs",
+)
+
+
+class ReferenceRange(BaseModel):
+    min: float | None = None
+    max: float | None = None
+    unit: str | None = None
+    interpretation: str
+    value: str | None = None
+
+
+class ObservationWriteSpec(BaseModel):
+    status: ObservationStatus = ObservationStatus.final
+    category: Coding = VitalSignsCoding
+    main_code: Coding
+    effective_datetime: datetime
+    value_type: ObservationValueType
+    value: ObservationValue
+    note: str | None = None
+    reference_range: list[ReferenceRange] = []
+    interpretation: str | None = None
+
+
 class Status(str, Enum):
     FINAL = "final"
     LEADS_OFF = "Message-Leads Off"
@@ -59,6 +116,7 @@ class WaveName(str, Enum):
     V6 = "V6"
     PLETH = "Pleth"
     RESPIRATION = "Respiration"
+
 
 class BloodPressure(BaseModel):
     value: Optional[float] = None

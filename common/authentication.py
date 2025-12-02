@@ -48,7 +48,6 @@ class CareAuthentication(JWTAuthentication):
     token provided in a request header.
     """
 
-    facility_header = "X-Facility-Id"
     auth_header_type = "Care_Bearer"
     auth_header_type_bytes = auth_header_type.encode(HTTP_HEADER_ENCODING)
 
@@ -82,7 +81,7 @@ class CareAuthentication(JWTAuthentication):
         if raw_token is None:
             return None
 
-        open_id_url = settings.CARE_JWK_URL
+        open_id_url = f"{settings.CARE_API}/api/gateway_device/jwks.json/"
         validated_token = self.get_validated_token(open_id_url, raw_token)
 
         return self.get_user(validated_token), validated_token

@@ -11,13 +11,18 @@ from sentry_sdk.crons import capture_checkin
 from sentry_sdk.crons.consts import MonitorStatus
 
 from middleware.observation.types import (
-    DailyRoundObservation,
     DataDumpRequest,
     DeviceID,
     Observation,
     ObservationID,
     StaticObservation,
     Status,
+    ObservationWriteSpec,
+    ObservationValueType,
+    ObservationValue,
+    Coding,
+    BloodPressure,
+    ReferenceRange,
 )
 
 logger = logging.getLogger(__name__)
@@ -191,54 +196,210 @@ def is_valid(observation: Observation):
             and not isinstance(observation.value, (int, float))
         )
     ):
-        logger.info(
-            "Observations are not valid for %s Returning False",
-            observation.observation_id,
-        )
         return False
-
     if observation.status == Status.FINAL:
         return True
-
     message = observation.status.replace("Message-", "")
     message_obj = messages.get(message, None)
     if message_obj and message_obj.get("invalid"):
         return False
-
     return True
 
 
-def get_vitals_from_observations(ip_address: str):
-    logger.info("Getting vitals from observations for the asset: %s", ip_address)
+UNIT_CODES = {
+    "deg F": {
+        "system": "http://unitsofmeasure.org",
+        "code": "[degF]",
+        "display": "degree Fahrenheit",
+    },
+    "deg C": {
+        "system": "http://unitsofmeasure.org",
+        "code": "Cel",
+        "display": "degree Celsius",
+    },
+    "Cel": {
+        "system": "http://unitsofmeasure.org",
+        "code": "Cel",
+        "display": "degree Celsius",
+    },
+    "mmHg": {
+        "system": "http://unitsofmeasure.org",
+        "code": "mm[Hg]",
+        "display": "millimeter of mercury",
+    },
+    "bpm": {
+        "system": "http://unitsofmeasure.org",
+        "code": "{beats}/min",
+        "display": "heart beats per minute",
+    },
+    "brpm": {
+        "system": "http://unitsofmeasure.org",
+        "code": "{Breaths}/min",
+        "display": "Breaths / minute",
+    },
+    "%": {"system": "http://unitsofmeasure.org", "code": "%", "display": "percent"},
+}
 
-    observation = get_static_observations(device_id=ip_address)
+OBSERVATION_ID_CODE_MAPPING = {
+    ObservationID.HEART_RATE: Coding(
+        code="8867-4", system="http://loinc.org", display="Heart rate"
+    ),
+    ObservationID.PULSE_RATE: Coding(
+        code="8867-4", system="http://loinc.org", display="Heart rate"
+    ),
+    ObservationID.SPO2: Coding(
+        code="2708-6",
+        system="http://loinc.org",
+        display="Oxygen saturation in Arterial blood",
+    ),
+    ObservationID.RESPIRATORY_RATE: Coding(
+        code="9279-1", system="http://loinc.org", display="Respiratory rate"
+    ),
+    ObservationID.BODY_TEMPERATURE1: Coding(
+        code="8310-5", system="http://loinc.org", display="Body temperature"
+    ),
+    ObservationID.BODY_TEMPERATURE2: Coding(
+        code="8310-5", system="http://loinc.org", display="Body temperature"
+    ),
+}
 
-    if not observation:
-        logger.info(
-            "Returning as observations is stale or empty for device id : %s", ip_address
-        )
+OBSERVATION_TYPES_FOR_AUTOMATED_OBSERVATIONS = [
+    ObservationID.HEART_RATE,
+    ObservationID.PULSE_RATE,
+    ObservationID.SPO2,
+    ObservationID.RESPIRATORY_RATE,
+    ObservationID.BODY_TEMPERATURE1,
+    ObservationID.BODY_TEMPERATURE2,
+    ObservationID.BLOOD_PRESSURE,
+]
+
+
+def normalize_interpretation(interpretation: str | None) -> str | None:
+    if interpretation is None or interpretation.strip() == "":
         return None
+    if interpretation.lower() == "na" or interpretation.lower() == "n/a":
+        return None
+    return interpretation
 
-    data = observation.observations
 
-    temperature_data = get_value_from_data(
-        "body-temperature1", data
-    ) or get_value_from_data("body-temperature2", data)
-    if temperature_data is None:
-        temperature_data = {"temperature": None, "temperature_measured_at": None}
+def get_reference_ranges(data: BloodPressure | Observation):
+    results: list[ReferenceRange] = []
+    unit = UNIT_CODES.get(data.unit)["code"] if data.unit else None
+    if data.low_limit:
+        results.append(
+            ReferenceRange(min=data.low_limit, unit=unit, interpretation="low")
+        )
+    if data.high_limit:
+        results.append(
+            ReferenceRange(max=data.high_limit, unit=unit, interpretation="high")
+        )
+    return results
 
-    return DailyRoundObservation(
-        taken_at=observation.last_updated,
-        spo2=get_value_from_data(ObservationID.SPO2, data),
-        ventilator_spo2=get_value_from_data(ObservationID.SPO2, data),
-        resp=get_value_from_data(ObservationID.RESPIRATORY_RATE, data),
-        pulse=get_value_from_data(ObservationID.HEART_RATE, data)
-        or get_value_from_data(ObservationID.PULSE_RATE, data),
-        **temperature_data,
-        bp=get_value_from_data(ObservationID.BLOOD_PRESSURE, data) or {},
-        rounds_type="AUTOMATED",
-        is_parsed_by_ocr=False,
+
+def get_blood_pressure_observation(
+    data: BloodPressure, coding: Coding, time: datetime
+) -> ObservationWriteSpec:
+    return ObservationWriteSpec(
+        main_code=coding,
+        effective_datetime=time,
+        value_type=ObservationValueType.integer,
+        value=ObservationValue(
+            value=data.value and str(int(data.value)),
+            unit=data.unit and UNIT_CODES.get(data.unit),
+        ),
+        interpretation=normalize_interpretation(data.interpretation),
+        reference_ranges=get_reference_ranges(data),
     )
+
+
+def get_entries_for_automated_observations(
+    data: StaticObservation,
+) -> list[ObservationWriteSpec]:
+    threshold_time = now() - timedelta(minutes=settings.AUTOMATED_OBSERVATIONS_INTERVAL)
+    if data.last_updated < threshold_time:
+        return []
+    results: List[ObservationWriteSpec] = []
+    for type in OBSERVATION_TYPES_FOR_AUTOMATED_OBSERVATIONS:
+        observations = data.observations.get(type, [])
+        if not observations:
+            continue
+        observation = observations[-1]
+        observation_time = make_aware(observation.date_time)
+        if observation_time < threshold_time:
+            continue
+        if not is_valid(observation):
+            logger.info(f"Observation {observation.observation_id} is invalid")
+            continue
+        if type == ObservationID.BLOOD_PRESSURE:
+            systolic, diastolic, mean = (
+                observation.systolic,
+                observation.diastolic,
+                observation.map,
+            )
+            if systolic and systolic.value:
+                results.append(
+                    get_blood_pressure_observation(
+                        systolic,
+                        coding=Coding(
+                            code="8480-6",
+                            system="http://loinc.org",
+                            display="Systolic blood pressure",
+                        ),
+                        time=observation_time,
+                    )
+                )
+            if diastolic and diastolic.value:
+                results.append(
+                    get_blood_pressure_observation(
+                        diastolic,
+                        coding=Coding(
+                            code="8462-4",
+                            system="http://loinc.org",
+                            display="Diastolic blood pressure",
+                        ),
+                        time=observation_time,
+                    )
+                )
+            if mean and mean.value:
+                results.append(
+                    get_blood_pressure_observation(
+                        mean,
+                        coding=Coding(
+                            code="8478-0",
+                            system="http://loinc.org",
+                            display="Mean blood pressure",
+                        ),
+                        time=observation_time,
+                    )
+                )
+        if observation.value is None:
+            continue
+        value: str | None = None
+        unit = observation.unit and UNIT_CODES.get(observation.unit)
+        value_type: ObservationValueType | None = None
+        if type in [
+            ObservationID.HEART_RATE,
+            ObservationID.SPO2,
+            ObservationID.PULSE_RATE,
+            ObservationID.RESPIRATORY_RATE,
+            ObservationID.BODY_TEMPERATURE1,
+        ]:
+            value_type = ObservationValueType.integer
+            value = str(int(observation.value))
+        if type in [ObservationID.BODY_TEMPERATURE1, ObservationID.BODY_TEMPERATURE2]:
+            value_type = ObservationValueType.decimal
+            value = str(observation.value)
+        results.append(
+            ObservationWriteSpec(
+                main_code=OBSERVATION_ID_CODE_MAPPING[type],
+                effective_datetime=observation_time,
+                value_type=value_type,
+                value=ObservationValue(value=value, unit=unit),
+                interpretation=normalize_interpretation(observation.interpretation),
+                reference_ranges=get_reference_ranges(observation),
+            )
+        )
+    return results
 
 
 def get_value_from_data(
@@ -261,7 +422,7 @@ def get_value_from_data(
     converted_date_time = make_aware(observation.date_time)
 
     is_stale = converted_date_time < (
-        now() - timedelta(minutes=settings.UPDATE_INTERVAL)
+        now() - timedelta(minutes=settings.AUTOMATED_OBSERVATIONS_INTERVAL)
     )
 
     if is_stale or not is_valid(observation):
@@ -308,7 +469,7 @@ def get_observations_from_redis():
 
 def get_static_observations(device_id: DeviceID):
     observations = get_observations_from_redis()
-    stale_time = now() - timedelta(minutes=settings.UPDATE_INTERVAL)
+    stale_time = now() - timedelta(minutes=settings.AUTOMATED_OBSERVATIONS_INTERVAL)
 
     # last one hour data matching the device id
     valid_observations: List[Observation] = []
@@ -348,7 +509,7 @@ def generate_static_observations(observation_list: List[Observation]):
 
 def get_data_for_s3_dump():
     observations = get_observations_from_redis()
-    stale_time = now() - timedelta(minutes=settings.UPDATE_INTERVAL)
+    stale_time = now() - timedelta(minutes=settings.AUTOMATED_OBSERVATIONS_INTERVAL)
 
     if not observations:
         return None
@@ -386,6 +547,9 @@ def make_data_dump_to_s3(request: DataDumpRequest):
             observation.model_dump(mode="json", by_alias=True)
             for observation in request.data
         ]
+        if not data:
+            logger.info("No data to upload to S3")
+            return
         s3.put_object(
             Bucket=settings.S3_BUCKET_NAME,
             Key=request.key,

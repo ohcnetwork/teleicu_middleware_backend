@@ -205,12 +205,9 @@ CHANNEL_LAYERS = {
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
 
 # Configs
-CARE_URL = env("CARE_URL")
 CARE_API = env("CARE_API")
-FACILITY_ID = env("FACILITY_ID")
-CARE_JWK_URL = env("CARE_JWK_URL")
-CARE_VERIFY_TOKEN_URL = env("CARE_VERIFY_TOKEN_URL")
-
+CARE_API_TIMEOUT = env.int("CARE_API_TIMEOUT", default=25)
+GATEWAY_DEVICE_ID = env("GATEWAY_DEVICE_ID")
 
 JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))
@@ -225,7 +222,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 # Observations
 REDIS_OBSERVATIONS_KEY = "observations"
-UPDATE_INTERVAL = env.int("UPDATE_INTERVAL", default=60)
+AUTOMATED_OBSERVATIONS_INTERVAL = env.int("AUTOMATED_OBSERVATIONS_INTERVAL", default=60)
 
 
 # Cameras

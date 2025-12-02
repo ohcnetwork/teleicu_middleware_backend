@@ -122,7 +122,9 @@ def verify_token(request):
         return Response(
             {"error": "no token provided"}, status=status.HTTP_401_UNAUTHORIZED
         )
-    res = requests.post(settings.CARE_VERIFY_TOKEN_URL, data={"token": request.Token})
+    res = requests.post(
+        f"{settings.CARE_API}/api/v1/auth/token/verify/", data={"token": request.Token}
+    )
     res.raise_for_status()
     middleware_token = generate_jwt(exp=60 * 20)
     return Response({"token": {middleware_token}}, status=status.HTTP_200_OK)
