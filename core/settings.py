@@ -207,7 +207,7 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
 # Configs
 CARE_API = env("CARE_API")
 CARE_API_TIMEOUT = env.int("CARE_API_TIMEOUT", default=25)
-GATEWAY_DEVICE_ID = env("GATEWAY_DEVICE_ID")
+GATEWAY_DEVICE_ID = env("GATEWAY_DEVICE_ID", default="")
 
 JWKS = JsonWebKey.import_key_set(
     json.loads(base64.b64decode(env("JWKS_BASE64", default=generate_encoded_jwks())))
@@ -222,6 +222,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 # Observations
 REDIS_OBSERVATIONS_KEY = "observations"
+AUTOMATED_OBSERVATIONS_ENABLED = env.bool("AUTOMATED_OBSERVATIONS_ENABLED", default=bool(GATEWAY_DEVICE_ID))
 AUTOMATED_OBSERVATIONS_INTERVAL = env.int("AUTOMATED_OBSERVATIONS_INTERVAL", default=60)
 
 
