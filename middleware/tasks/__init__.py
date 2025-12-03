@@ -10,11 +10,12 @@ from middleware.tasks.store_camera_statuses import store_camera_statuses
 @current_app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Run automated observations every hour
-    sender.add_periodic_task(
-        settings.AUTOMATED_OBSERVATIONS_INTERVAL * 60,
-        automated_observations.s(),
-        name="run-automated-observations",
-    )
+    if settings.AUTOMATED_OBSERVATIONS_ENABLED:
+        sender.add_periodic_task(
+            settings.AUTOMATED_OBSERVATIONS_INTERVAL * 60,
+            automated_observations.s(),
+            name="run-automated-observations",
+        )
 
     # Run observations_s3_dump every 30 seconds
     sender.add_periodic_task(
