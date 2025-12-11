@@ -26,8 +26,7 @@ services:
     build:
       context: .
       dockerfile: docker/dev.Dockerfile
-    # command: ["python", "manage.py", "runserver", "0.0.0.0:8090"]
-    command: ["python", "-m", "debugpy", "--wait-for-client", "--listen", "0.0.0.0:9876", manage.py", "runserver", "0.0.0.0:8090"]
+    command: ["sh", "-c", "/app/scripts/start-backend-dev.sh"]
     volumes:
       - .:/app
     depends_on:
@@ -38,7 +37,7 @@ services:
       - ./.env
     ports:
       - "8090:8090"
-      - "9876:9876"
+      - "9877:9876"
 
   celery:
     restart: unless-stopped
