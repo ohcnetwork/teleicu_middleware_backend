@@ -1,7 +1,14 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgres:17
     restart: always
+    logging: *default-logging
     env_file:
       - ./.env
     volumes:
@@ -10,11 +17,13 @@ services:
   redis:
     image: redis:7.2
     restart: always
+    logging: *default-logging
 
   # rtsptoweb:
   stream-server:
     restart: always
     image: ghcr.io/deepch/rtsptoweb:latest
+    logging: *default-logging
     volumes:
       - ./RtspConfig.json:/config/config.json
     ports:
@@ -25,6 +34,7 @@ services:
   teleicu-middleware:
     restart: always
     image: ghcr.io/10bedicu/teleicu_gateway:latest
+    logging: *default-logging
     command: ["sh", "-c", "/app/start-backend.sh"]
     depends_on:
       - redis
@@ -38,6 +48,7 @@ services:
   celery:
     restart: always
     image: ghcr.io/10bedicu/teleicu_gateway:latest
+    logging: *default-logging
     command: ["sh", "-c", "/app/start-celery.sh"]
     env_file:
       - ./.env
@@ -50,6 +61,7 @@ services:
   reverse-proxy:
     restart: always
     image: ghcr.io/10bedicu/teleicu_gateway_nginx:latest
+    logging: *default-logging
     depends_on:
       - teleicu-middleware
     ports:
